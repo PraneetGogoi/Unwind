@@ -193,4 +193,4 @@ This project is licensed under the **MIT License**.
 
 ## ⭐ Support
 
-If you like this project, consider giving it a ⭐ on GitHub!<img width="1710" height="986" alt="Screenshot 2026-04-18 at 9 43 45 AM" src="https://github.com/user-attachments/assets/cedbe93d-49a9-4e9e-9b73-9388083539d3" />
+If you like this project, consider giving it a ⭐ on GitHub!
