@@ -1,6 +1,10 @@
 "use client";
 
-import { PlotlyChart } from "@/components/PlotlyChart";
+import dynamic from "next/dynamic";
+const PlotlyChart = dynamic(
+  () => import("@/components/PlotlyChart").then((mod) => mod.PlotlyChart),
+  { ssr: false }
+);
 
 // ── Data baked from model.ipynb (RandomForest, 7,000 developers) ──
 const DISTRIBUTION = { Low: 1593, Medium: 3625, High: 1782 };
