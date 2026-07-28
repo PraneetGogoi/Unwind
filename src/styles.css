@@ -8,25 +8,25 @@
   --font-sans: "Karla", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
-  --color-ink: #1a365d; /* Deep ocean blue */
-  --color-paper: #fdfbf7; /* Soft cream */
-  --color-frame: #e2e8f0; /* Calm sage / light grey */
-  --color-dots-bg: #f8fafc; /* Even softer blue-grey */
-  --color-grey-text: #475569; /* Slate grey */
+  --color-ink: var(--theme-ink);
+  --color-paper: var(--theme-paper);
+  --color-frame: var(--theme-frame);
+  --color-dots-bg: var(--theme-dots-bg);
+  --color-grey-text: var(--theme-grey-text);
 
-  --shadow-hard: 4px 4px 0px var(--color-ink);
-  --shadow-hard-sm: 2px 2px 0px var(--color-ink);
-  --shadow-hard-hover: 2px 2px 0px var(--color-ink);
-  --shadow-none: 0px 0px 0px var(--color-ink);
+  --shadow-hard: 4px 4px 0px var(--theme-ink);
+  --shadow-hard-sm: 2px 2px 0px var(--theme-ink);
+  --shadow-hard-hover: 2px 2px 0px var(--theme-ink);
+  --shadow-none: 0px 0px 0px var(--theme-ink);
 }
 
 @layer base {
   :root {
-    --color-ink: #1a365d;
-    --color-paper: #fdfbf7;
-    --color-frame: #e2e8f0;
-    --color-dots-bg: #f8fafc;
-    --color-grey-text: #475569;
+    --theme-ink: #1a365d;
+    --theme-paper: #fdfbf7;
+    --theme-frame: #e2e8f0;
+    --theme-dots-bg: #f8fafc;
+    --theme-grey-text: #475569;
 
     --low: #10b981;    /* Emerald green */
     --medium: #f59e0b; /* Amber */
@@ -35,11 +35,11 @@
     --coral: #f43f5e;
   }
   .dark {
-    --color-ink: #fdfbf7;
-    --color-paper: #1e293b;
-    --color-frame: #334155;
-    --color-dots-bg: #0f172a;
-    --color-grey-text: #94a3b8;
+    --theme-ink: #fdfbf7;
+    --theme-paper: #1e293b;
+    --theme-frame: #334155;
+    --theme-dots-bg: #0f172a;
+    --theme-grey-text: #94a3b8;
     
     --low: #34d399;
     --medium: #fbbf24;

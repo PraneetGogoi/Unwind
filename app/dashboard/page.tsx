@@ -110,7 +110,7 @@ export default function DashboardPage() {
                 height={400}
                 layout={{
                   ...signalChart.layout,
-                  font: { family: MONO, color: "#1a365d", size: 12 },
+                  font: { family: MONO, color: "var(--theme-ink)", size: 12 },
                   margin: { l: 60, r: 20, t: 40, b: 40 },
                   yaxis: { rangemode: "tozero" }
                 }}
@@ -127,7 +127,7 @@ export default function DashboardPage() {
                 height={400}
                 layout={{
                   ...boxChart.layout,
-                  font: { family: MONO, color: "#1a365d", size: 12 },
+                  font: { family: MONO, color: "var(--theme-ink)", size: 12 },
                   margin: { l: 60, r: 20, t: 40, b: 40 },
                   yaxis: { rangemode: "tozero" }
                 }}
@@ -145,7 +145,7 @@ export default function DashboardPage() {
                   height={350}
                   layout={{
                     ...segmentChart.layout,
-                    font: { family: MONO, color: "#1a365d", size: 12 },
+                    font: { family: MONO, color: "var(--theme-ink)", size: 12 },
                     margin: { l: 40, r: 20, t: 40, b: 40 },
                   }}
                 />
@@ -161,7 +161,7 @@ export default function DashboardPage() {
                   height={350}
                   layout={{
                     ...radarChart.layout,
-                    font: { family: MONO, color: "#1a365d", size: 12 },
+                    font: { family: MONO, color: "var(--theme-ink)", size: 12 },
                     margin: { l: 40, r: 40, t: 40, b: 40 },
                   }}
                 />
