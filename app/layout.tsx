@@ -41,6 +41,24 @@ export default function RootLayout({
     >
       <body className="font-sans bg-dots-bg text-ink antialiased">
         <ThemeProvider>
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                window.addEventListener('error', function(e) {
+                  const div = document.createElement('div');
+                  div.style.position = 'fixed';
+                  div.style.top = '0';
+                  div.style.left = '0';
+                  div.style.zIndex = '9999';
+                  div.style.background = 'red';
+                  div.style.color = 'white';
+                  div.style.padding = '10px';
+                  div.innerText = 'JS ERROR: ' + e.message;
+                  document.body.appendChild(div);
+                });
+              `
+            }}
+          />
           <Header />
           <div className="min-h-[calc(100vh-4rem)]">{children}</div>
         </ThemeProvider>

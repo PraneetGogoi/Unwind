@@ -5,7 +5,7 @@ import { ArrowRight, Loader2, Info } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-type Status = "IDLE" | "LOADING" | "TYPING_LOG" | "SHOW_RESULT" | "SIMULATOR";
+type Status = "IDLE" | "LOADING" | "SHOW_RESULT" | "SIMULATOR";
 
 const TERMINAL_LOGS = [
   "> Initializing burnout predictor...",
@@ -21,9 +21,6 @@ export default function PredictorPage() {
   const [baseResult, setBaseResult] = useState<any>(null);
   const [baseFormData, setBaseFormData] = useState<any>(null);
   const [result, setResult] = useState<any>(null);
-
-  // Terminal log typing state
-  const [logIndex, setLogIndex] = useState(0);
 
   const [formData, setFormData] = useState({
     age: 28,
@@ -69,7 +66,6 @@ export default function PredictorPage() {
     }
     
     setStatus("LOADING");
-    setLogIndex(0);
 
     try {
       const res = await fetch("/api/predict", {
@@ -84,7 +80,7 @@ export default function PredictorPage() {
       setResult(data);
       setBaseResult(data);
       setBaseFormData({...formData});
-      setStatus("TYPING_LOG");
+      setStatus("SHOW_RESULT");
       
       const history = JSON.parse(localStorage.getItem("unwind_history") || "[]");
       history.push({
@@ -100,19 +96,6 @@ export default function PredictorPage() {
       setStatus("IDLE");
     }
   };
-
-  useEffect(() => {
-    if (status === "TYPING_LOG") {
-      if (logIndex < TERMINAL_LOGS.length) {
-        const timer = setTimeout(() => {
-          setLogIndex((i) => i + 1);
-        }, 300);
-        return () => clearTimeout(timer);
-      } else {
-        setTimeout(() => setStatus("SHOW_RESULT"), 400);
-      }
-    }
-  }, [status, logIndex]);
 
   // Debounced simulator updates
   useEffect(() => {
@@ -152,17 +135,12 @@ export default function PredictorPage() {
     return `${Math.abs(diff).toFixed(1)} ${dir} than avg`;
   };
 
-  // Derive contributions (pseudo-SHAP) by comparing current to baseline
-  // If sleep is lower than avg, it pushes risk up (negative effect on well-being)
-  // If meetings are higher than avg, pushes risk up
   const getContributions = () => {
     if (!result || !result.baseline_stats) return [];
     const b = result.baseline_stats;
     const c = [];
     
-    // Factors that are BAD when HIGH (pushes risk up)
     const directBad = ['stress_level', 'meetings_per_day', 'bugs_per_day', 'caffeine_intake', 'screen_time', 'daily_work_hours'];
-    // Factors that are BAD when LOW
     const inverseBad = ['sleep_hours', 'exercise_hours'];
 
     for (const key of directBad) {
@@ -181,11 +159,10 @@ export default function PredictorPage() {
       }
     }
 
-    return c.sort((a, b) => b.value - a.value).slice(0, 5); // top 5 drivers
+    return c.sort((a, b) => b.value - a.value).slice(0, 5);
   };
 
   const handleAddPlan = () => {
-    // Recommend a focus based on the highest driver
     const topDriver = getContributions().find(c => c.type === "up");
     let focusName = "Sleep";
     if (topDriver) {
@@ -263,10 +240,10 @@ export default function PredictorPage() {
               <div className="mt-4 flex flex-col sm:flex-row gap-4 pt-4 border-t-2 border-ink">
                 <button
                   type="submit"
-                  disabled={status === "LOADING" || status === "TYPING_LOG"}
+                  disabled={status === "LOADING"}
                   className="flex-1 brutal-btn py-4 text-lg font-bold flex items-center justify-center gap-2"
                 >
-                  {status === "LOADING" || status === "TYPING_LOG" ? (
+                  {status === "LOADING" ? (
                     <Loader2 className="animate-spin" />
                   ) : (
                     status === "SIMULATOR" ? "Reset to Baseline" : "Run Prediction"
