@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { getSignalAveragesChart, getBoxPlotChart, getSegmentChart, getRadarChart } from "@/lib/charts";
+import { useTheme } from "@/components/theme-provider";
 const PlotlyChart = dynamic(
   () => import("@/components/PlotlyChart").then((mod) => mod.PlotlyChart),
   { ssr: false }
@@ -43,7 +44,11 @@ const prettify = (s: string) =>
 const MONO = "JetBrains Mono, ui-monospace, monospace";
 
 export default function DashboardPage() {
+  const { theme } = useTheme();
   const [userMetrics, setUserMetrics] = useState<any>(null);
+
+  // Plotly font color needs explicit hex
+  const fontColor = theme === "dark" ? "#fdfbf7" : "#1a365d";
 
   useEffect(() => {
     const saved = localStorage.getItem("unwind_latest_prediction");
@@ -110,7 +115,7 @@ export default function DashboardPage() {
                 height={400}
                 layout={{
                   ...signalChart.layout,
-                  font: { family: MONO, color: "var(--theme-ink)", size: 12 },
+                  font: { family: MONO, color: fontColor, size: 12 },
                   margin: { l: 60, r: 20, t: 40, b: 40 },
                   yaxis: { rangemode: "tozero" }
                 }}
@@ -127,7 +132,7 @@ export default function DashboardPage() {
                 height={400}
                 layout={{
                   ...boxChart.layout,
-                  font: { family: MONO, color: "var(--theme-ink)", size: 12 },
+                  font: { family: MONO, color: fontColor, size: 12 },
                   margin: { l: 60, r: 20, t: 40, b: 40 },
                   yaxis: { rangemode: "tozero" }
                 }}
@@ -145,7 +150,7 @@ export default function DashboardPage() {
                   height={350}
                   layout={{
                     ...segmentChart.layout,
-                    font: { family: MONO, color: "var(--theme-ink)", size: 12 },
+                    font: { family: MONO, color: fontColor, size: 12 },
                     margin: { l: 40, r: 20, t: 40, b: 40 },
                   }}
                 />
@@ -161,7 +166,7 @@ export default function DashboardPage() {
                   height={350}
                   layout={{
                     ...radarChart.layout,
-                    font: { family: MONO, color: "var(--theme-ink)", size: 12 },
+                    font: { family: MONO, color: fontColor, size: 12 },
                     margin: { l: 40, r: 40, t: 40, b: 40 },
                   }}
                 />
