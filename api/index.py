@@ -2,7 +2,6 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import joblib
-import pandas as pd
 import uvicorn
 import os
 
@@ -38,7 +37,7 @@ class PredictionRequest(BaseModel):
     exercise_hours: float
     stress_level: float
 
-@app.post("/predict")
+@app.post("/api/predict")
 def predict_burnout(req: PredictionRequest):
     if model is None:
         raise HTTPException(status_code=500, detail="Model not loaded")
@@ -78,4 +77,4 @@ def predict_burnout(req: PredictionRequest):
     }
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
