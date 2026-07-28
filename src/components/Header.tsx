@@ -12,6 +12,7 @@ const ROUTES = [
   { name: "Predict", path: "/predict" },
   { name: "Breathe", path: "/breathe" },
   { name: "Tips", path: "/tips" },
+  { name: "Model", path: "/model" },
 ];
 
 export function Header() {

@@ -1,6 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useEffect, useState } from "react";
+import { getSignalAveragesChart, getBoxPlotChart, getSegmentChart, getRadarChart } from "@/lib/charts";
 const PlotlyChart = dynamic(
   () => import("@/components/PlotlyChart").then((mod) => mod.PlotlyChart),
   { ssr: false }
@@ -41,38 +43,26 @@ const prettify = (s: string) =>
 const MONO = "JetBrains Mono, ui-monospace, monospace";
 
 export default function DashboardPage() {
-  const levels = ["Low", "Medium", "High"] as const;
+  const [userMetrics, setUserMetrics] = useState<any>(null);
 
-  const distributionData: Plotly.Data[] = [
-    {
-      type: "bar",
-      x: [...levels],
-      y: levels.map((l) => DISTRIBUTION[l]),
-      marker: {
-        color: levels.map((l) => RISK_COLORS[l]),
-        line: { color: "#1a365d", width: 2 },
-      },
-      text: levels.map(
-        (l) =>
-          `${DISTRIBUTION[l].toLocaleString()}  (${((DISTRIBUTION[l] / TOTAL) * 100).toFixed(1)}%)`,
-      ),
-      textposition: "outside",
-      hovertemplate: "%{x}: %{y:,} devs<extra></extra>",
-    },
-  ];
+  useEffect(() => {
+    const saved = localStorage.getItem("unwind_latest_prediction");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setUserMetrics(parsed.inputs);
+      } catch (e) {
+        console.error("Failed to parse history", e);
+      }
+    }
+  }, []);
 
-  const importanceData: Plotly.Data[] = [
-    {
-      type: "bar",
-      orientation: "h",
-      x: FEATURE_IMPORTANCE.map((f) => f.importance),
-      y: FEATURE_IMPORTANCE.map((f) => prettify(f.feature)),
-      marker: { color: "#1a365d", line: { color: "#1a365d", width: 0 } },
-      text: FEATURE_IMPORTANCE.map((f) => f.importance.toFixed(3)),
-      textposition: "outside",
-      hovertemplate: "%{y}: %{x:.3f}<extra></extra>",
-    },
-  ];
+  const signalChart = getSignalAveragesChart(userMetrics);
+  const boxChart = getBoxPlotChart(userMetrics);
+  const segmentChart = getSegmentChart();
+  const radarChart = getRadarChart();
+
+
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-dots-bg text-ink selection:bg-ink selection:text-paper">
@@ -85,22 +75,15 @@ export default function DashboardPage() {
           distributed, and which signals drive it most.
         </p>
 
-        {/* model summary strip */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-          {[
-            { k: "Developers", v: "7,000" },
-            { k: "Best model", v: "Gradient Boosting" },
-            { k: "Accuracy", v: "98.7%" },
-            { k: "ROC-AUC", v: "0.996" },
-          ].map((s) => (
-            <div key={s.k} className="brutal-card bg-paper p-4">
-              <div className="font-mono text-[11px] uppercase tracking-wide text-grey-text">
-                {s.k}
-              </div>
-              <div className="font-display text-2xl mt-1">{s.v}</div>
-            </div>
-          ))}
-        </div>
+        {userMetrics && (
+          <div className="brutal-card bg-[#3b82f6]/10 border-[#3b82f6] p-4 mb-8 flex items-center gap-4 animate-in fade-in slide-in-from-top-4">
+            <div className="w-4 h-4 text-[#3b82f6] rotate-45">★</div>
+            <p className="font-sans text-sm text-ink">
+              <strong>You are here.</strong> We found your latest prediction from the Predict tool. 
+              The blue star marker on the charts below shows where your habits fall compared to the population.
+            </p>
+          </div>
+        )}
 
         {/* charts */}
         <div className="brutal-card bg-paper p-8">
@@ -117,45 +100,73 @@ export default function DashboardPage() {
           <div className="flex flex-col gap-12">
             <section>
               <h2 className="font-display text-2xl mb-1">
-                Burnout Distribution
+                Signal Averages by Risk Level
               </h2>
               <p className="font-sans text-sm text-grey-text mb-4">
-                Most developers land at moderate risk; the high-risk tail is the
-                group worth watching.
+                High-burnout developers tend to have higher stress and work hours, but lower sleep.
               </p>
               <PlotlyChart
-                data={distributionData}
-                height={340}
+                data={signalChart.data}
+                height={400}
                 layout={{
+                  ...signalChart.layout,
                   font: { family: MONO, color: "#1a365d", size: 12 },
-                  showlegend: false,
-                  bargap: 0.45,
-                  margin: { l: 60, r: 20, t: 20, b: 40 },
-                  yaxis: { title: { text: "Developers" }, rangemode: "tozero" },
-                  xaxis: { title: { text: "" } },
+                  margin: { l: 60, r: 20, t: 40, b: 40 },
+                  yaxis: { rangemode: "tozero" }
                 }}
               />
             </section>
 
             <section>
-              <h2 className="font-display text-2xl mb-1">Feature Importance</h2>
+              <h2 className="font-display text-2xl mb-1">Stress Distribution (Spread)</h2>
               <p className="font-sans text-sm text-grey-text mb-4">
-                Stress level dominates — it alone accounts for ~62% of the
-                model&apos;s decisions. Cognitive load and work-life balance are
-                distant seconds.
+                Box plots show the median and quartiles of stress levels across the three burnout groups.
               </p>
               <PlotlyChart
-                data={importanceData}
-                height={520}
+                data={boxChart.data}
+                height={400}
                 layout={{
+                  ...boxChart.layout,
                   font: { family: MONO, color: "#1a365d", size: 12 },
-                  showlegend: false,
-                  margin: { l: 150, r: 50, t: 20, b: 40 },
-                  xaxis: { title: { text: "Importance" }, rangemode: "tozero" },
-                  yaxis: { automargin: true },
+                  margin: { l: 60, r: 20, t: 40, b: 40 },
+                  yaxis: { rangemode: "tozero" }
                 }}
               />
             </section>
+
+            <div className="grid md:grid-cols-2 gap-12">
+              <section>
+                <h2 className="font-display text-2xl mb-1">Risk by Experience</h2>
+                <p className="font-sans text-sm text-grey-text mb-4">
+                  Seniors and Principals make up a distinct proportion of burnout groups.
+                </p>
+                <PlotlyChart
+                  data={segmentChart.data}
+                  height={350}
+                  layout={{
+                    ...segmentChart.layout,
+                    font: { family: MONO, color: "#1a365d", size: 12 },
+                    margin: { l: 40, r: 20, t: 40, b: 40 },
+                  }}
+                />
+              </section>
+
+              <section>
+                <h2 className="font-display text-2xl mb-1">Risk Profile Radar</h2>
+                <p className="font-sans text-sm text-grey-text mb-4">
+                  The distinct "shape" of a high-risk vs low-risk lifestyle across all factors.
+                </p>
+                <PlotlyChart
+                  data={radarChart.data}
+                  height={350}
+                  layout={{
+                    ...radarChart.layout,
+                    font: { family: MONO, color: "#1a365d", size: 12 },
+                    margin: { l: 40, r: 40, t: 40, b: 40 },
+                  }}
+                />
+              </section>
+            </div>
           </div>
         </div>
 

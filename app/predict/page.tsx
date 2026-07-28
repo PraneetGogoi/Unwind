@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { ArrowRight, Loader2 } from "lucide-react";
 import Link from "next/link";
 
-type Status = "IDLE" | "LOADING" | "TYPING_LOG" | "SHOW_RESULT";
+type Status = "IDLE" | "LOADING" | "TYPING_LOG" | "SHOW_RESULT" | "SIMULATOR";
 
 const TERMINAL_LOGS = [
   "> Initializing burnout predictor...",
@@ -46,6 +46,32 @@ export default function PredictorPage() {
     }));
   };
 
+  const getTopDrivers = () => {
+    const drivers = [];
+    if (formData.stress_level >= 60) drivers.push({ name: "High Stress", category: "focus" });
+    if (formData.sleep_hours <= 6) drivers.push({ name: "Low Sleep", category: "sleep" });
+    if (formData.caffeine_intake >= 4) drivers.push({ name: "High Caffeine", category: "caffeine" });
+    if (formData.meetings_per_day >= 5) drivers.push({ name: "Meeting Overload", category: "meetings" });
+    if (formData.screen_time >= 10) drivers.push({ name: "High Screen Time", category: "screen-time" });
+    if (formData.exercise_hours <= 1) drivers.push({ name: "Low Movement", category: "movement" });
+    
+    return drivers.slice(0, 3);
+  };
+
+  const INPUT_CONFIG = {
+    age: { min: 18, max: 80, step: 1 },
+    experience_years: { min: 0, max: 50, step: 1 },
+    daily_work_hours: { min: 0, max: 24, step: 0.5 },
+    sleep_hours: { min: 0, max: 24, step: 0.5 },
+    caffeine_intake: { min: 0, max: 20, step: 1 },
+    bugs_per_day: { min: 0, max: 50, step: 1 },
+    commits_per_day: { min: 0, max: 50, step: 1 },
+    meetings_per_day: { min: 0, max: 20, step: 1 },
+    screen_time: { min: 0, max: 24, step: 0.5 },
+    exercise_hours: { min: 0, max: 10, step: 0.5 },
+    stress_level: { min: 0, max: 100, step: 1 },
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus("LOADING");
@@ -61,6 +87,17 @@ export default function PredictorPage() {
       const data = await res.json();
       setResult(data);
       setStatus("TYPING_LOG");
+      
+      // Save to localStorage history
+      const history = JSON.parse(localStorage.getItem("unwind_history") || "[]");
+      history.push({
+        timestamp: new Date().toISOString(),
+        inputs: formData,
+        result: data
+      });
+      localStorage.setItem("unwind_history", JSON.stringify(history));
+      // Save latest for dashboard
+      localStorage.setItem("unwind_latest_prediction", JSON.stringify({ inputs: formData, result: data }));
     } catch (err) {
       console.error(err);
       alert("Failed to connect to the prediction API.");
@@ -82,9 +119,28 @@ export default function PredictorPage() {
     }
   }, [status, logIndex]);
 
+  // Debounced simulator updates
+  useEffect(() => {
+    if (status !== "SIMULATOR") return;
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch("/api/predict", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        });
+        const data = await res.json();
+        setResult(data);
+      } catch (err) {
+        console.error("Simulator API error", err);
+      }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [formData, status]);
+
   // Handle gauge animation
   useEffect(() => {
-    if (status === "SHOW_RESULT" && result) {
+    if ((status === "SHOW_RESULT" || status === "SIMULATOR") && result) {
       // Determine a fake "score" based on risk level for the dial if not provided by API
       // Since API returns Low, Moderate, High, we map it:
       const targetScore =
@@ -94,17 +150,7 @@ export default function PredictorPage() {
             ? 55
             : 25;
 
-      let current = 0;
-      const interval = setInterval(() => {
-        current += 3;
-        if (current >= targetScore) {
-          setDisplayScore(targetScore);
-          clearInterval(interval);
-        } else {
-          setDisplayScore(current);
-        }
-      }, 20);
-      return () => clearInterval(interval);
+      setDisplayScore(targetScore);
     }
   }, [status, result]);
 
@@ -143,26 +189,44 @@ export default function PredictorPage() {
               onSubmit={handleSubmit}
               className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-6"
             >
-              {Object.entries(formData).map(([key, value]) => (
-                <div key={key} className="flex flex-col">
-                  <label className="font-bold text-sm mb-2 uppercase tracking-wide flex justify-between">
-                    <span>{key.replace(/_/g, " ")}</span>
-                  </label>
-                  <input
-                    type="number"
-                    name={key}
-                    step="0.1"
-                    value={value}
-                    onChange={handleChange}
-                    className="brutal-border bg-dots-bg p-3 font-mono focus:outline-none focus:ring-2 focus:ring-ink"
-                  />
-                </div>
-              ))}
-              <div className="sm:col-span-2 mt-4">
+              {Object.entries(formData).map(([key, value]) => {
+                const config = INPUT_CONFIG[key as keyof typeof INPUT_CONFIG];
+                return (
+                  <div key={key} className="flex flex-col gap-2">
+                    <label className="font-bold text-sm uppercase tracking-wide flex justify-between">
+                      <span>{key.replace(/_/g, " ")}</span>
+                      <span className="text-grey-text">{value}</span>
+                    </label>
+                    <div className="flex items-center gap-4">
+                      <input
+                        type="range"
+                        name={key}
+                        min={config.min}
+                        max={config.max}
+                        step={config.step}
+                        value={value}
+                        onChange={handleChange}
+                        className="flex-1 accent-ink h-2 bg-frame brutal-border appearance-none cursor-pointer"
+                      />
+                      <input
+                        type="number"
+                        name={key}
+                        min={config.min}
+                        max={config.max}
+                        step={config.step}
+                        value={value}
+                        onChange={handleChange}
+                        className="w-20 brutal-border bg-dots-bg p-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-ink"
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+              <div className="sm:col-span-2 mt-4 flex gap-4">
                 <button
                   type="submit"
                   disabled={status === "LOADING" || status === "TYPING_LOG"}
-                  className="w-full brutal-btn py-4 text-xl font-bold flex items-center justify-center gap-2"
+                  className="flex-1 brutal-btn py-4 text-xl font-bold flex items-center justify-center gap-2"
                 >
                   {status === "LOADING" || status === "TYPING_LOG" ? (
                     <Loader2 className="animate-spin" />
@@ -173,6 +237,15 @@ export default function PredictorPage() {
                     <ArrowRight />
                   ) : null}
                 </button>
+                {(status === "SHOW_RESULT" || status === "SIMULATOR") && (
+                  <button
+                    type="button"
+                    onClick={() => setStatus("SIMULATOR")}
+                    className="brutal-btn py-4 px-6 text-xl font-bold flex items-center justify-center gap-2 border-dashed bg-transparent hover:bg-ink hover:text-paper"
+                  >
+                    What-If Simulator
+                  </button>
+                )}
               </div>
             </form>
           </div>
@@ -207,7 +280,7 @@ export default function PredictorPage() {
                   </div>
                 )}
 
-                {status === "SHOW_RESULT" && result && (
+                {(status === "SHOW_RESULT" || status === "SIMULATOR") && result && (
                   <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 flex-1 flex flex-col">
                     <h3 className="font-bold text-sm text-grey-text uppercase mb-2">
                       Prediction
@@ -232,6 +305,13 @@ export default function PredictorPage() {
                         {displayScore}
                       </div>
                     </div>
+
+                    {status === "SIMULATOR" && (
+                      <div className="mb-6 p-4 border-2 border-ink bg-frame border-dashed animate-in fade-in zoom-in duration-300">
+                        <h3 className="font-bold text-sm text-ink uppercase mb-4">Simulator Mode</h3>
+                        <p className="text-sm text-grey-text mb-4">Adjust your inputs on the left. Watch how your risk score changes in real-time.</p>
+                      </div>
+                    )}
 
                     <h3 className="font-bold text-sm text-grey-text uppercase mb-3">
                       Key Factors
@@ -291,6 +371,23 @@ export default function PredictorPage() {
                         </div>
                       </div>
                     </div>
+
+                    {getTopDrivers().length > 0 && (
+                      <div className="mb-8">
+                        <h3 className="font-bold text-sm text-grey-text uppercase mb-3">Top Actionable Drivers</h3>
+                        <div className="flex flex-wrap gap-3">
+                          {getTopDrivers().map((driver, idx) => (
+                            <Link
+                              key={idx}
+                              href={`/tips#${driver.category}`}
+                              className="px-4 py-2 border-2 border-ink text-sm font-bold bg-frame hover:bg-ink hover:text-paper transition-colors"
+                            >
+                              {driver.name} &rarr;
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     <div className="mt-auto">
                       <Link
