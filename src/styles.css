@@ -1,0 +1,84 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@source "../app";
+@import "tw-animate-css";
+
+@theme inline {
+  --font-display: "Baloo 2", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Karla", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --color-ink: #1a365d; /* Deep ocean blue */
+  --color-paper: #fdfbf7; /* Soft cream */
+  --color-frame: #e2e8f0; /* Calm sage / light grey */
+  --color-dots-bg: #f8fafc; /* Even softer blue-grey */
+  --color-grey-text: #475569; /* Slate grey */
+
+  --shadow-hard: 4px 4px 0px var(--color-ink);
+  --shadow-hard-sm: 2px 2px 0px var(--color-ink);
+  --shadow-hard-hover: 2px 2px 0px var(--color-ink);
+  --shadow-none: 0px 0px 0px var(--color-ink);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-ink);
+  }
+  html, body {
+    background-color: var(--color-dots-bg);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, .font-display {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+}
+
+@layer utilities {
+  .shadow-hard { box-shadow: var(--shadow-hard); }
+  .shadow-hard-sm { box-shadow: var(--shadow-hard-sm); }
+  
+  .bg-halftone {
+    background-color: var(--color-dots-bg);
+    background-image: radial-gradient(var(--color-ink) 1.5px, transparent 1.5px);
+    background-size: 10px 10px;
+  }
+  
+  .brutal-border {
+    border: 2px solid var(--color-ink);
+  }
+  
+  .brutal-btn {
+    border: 2px solid var(--color-ink);
+    box-shadow: var(--shadow-hard);
+    background-color: var(--color-frame);
+    transition: transform 150ms ease, box-shadow 150ms ease;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .brutal-btn:hover {
+      transform: translate(2px, 2px);
+      box-shadow: var(--shadow-hard-hover);
+    }
+    .brutal-btn:active {
+      transform: translate(4px, 4px);
+      box-shadow: var(--shadow-none);
+    }
+  }
+  
+  .brutal-card {
+    border: 2px solid var(--color-ink);
+    box-shadow: var(--shadow-hard);
+    background-color: var(--color-paper);
+    transition: box-shadow 150ms ease, transform 150ms ease;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .brutal-card:hover {
+      transform: translate(-1px, -1px);
+      box-shadow: 6px 6px 0px var(--color-ink);
+    }
+  }
+  
+  .text-balance { text-wrap: balance; }
+}
