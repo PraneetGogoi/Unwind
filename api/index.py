@@ -18,7 +18,7 @@ app.add_middleware(
 )
 
 # Load model on startup
-MODEL_PATH = os.path.join(os.path.dirname(__file__), "..", "model.pkl")
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "model.pkl")
 try:
     model = joblib.load(MODEL_PATH)
 except Exception as e:
