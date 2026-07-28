@@ -39,7 +39,7 @@ export function getSignalAveragesChart(userMetrics?: any) {
   return {
     data,
     layout: {
-      barmode: "group",
+      barmode: "group" as const,
       title: { text: "Average Signals by Risk Level" }
     }
   };
@@ -97,7 +97,7 @@ export function getSegmentChart() {
   return {
     data,
     layout: {
-      barmode: "stack",
+      barmode: "stack" as const,
       title: { text: "Burnout Risk by Experience Tier" }
     }
   };
