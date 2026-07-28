@@ -10,9 +10,9 @@ const ROUTES = [
   { name: "Home", path: "/" },
   { name: "Dashboard", path: "/dashboard" },
   { name: "Predict", path: "/predict" },
+  { name: "My Unwind", path: "/my-unwind" },
   { name: "Breathe", path: "/breathe" },
   { name: "Tips", path: "/tips" },
-  { name: "Model", path: "/model" },
 ];
 
 export function Header() {

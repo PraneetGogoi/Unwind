@@ -21,6 +21,33 @@
 }
 
 @layer base {
+  :root {
+    --color-ink: #1a365d;
+    --color-paper: #fdfbf7;
+    --color-frame: #e2e8f0;
+    --color-dots-bg: #f8fafc;
+    --color-grey-text: #475569;
+
+    --low: #10b981;    /* Emerald green */
+    --medium: #f59e0b; /* Amber */
+    --high: #ef4444;   /* Red */
+    --teal: #14b8a6;
+    --coral: #f43f5e;
+  }
+  .dark {
+    --color-ink: #fdfbf7;
+    --color-paper: #1e293b;
+    --color-frame: #334155;
+    --color-dots-bg: #0f172a;
+    --color-grey-text: #94a3b8;
+    
+    --low: #34d399;
+    --medium: #fbbf24;
+    --high: #f87171;
+    --teal: #2dd4bf;
+    --coral: #fb7185;
+  }
+
   * {
     border-color: var(--color-ink);
   }

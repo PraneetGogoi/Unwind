@@ -66,8 +66,33 @@ def predict_burnout(req: PredictionRequest):
     
     prediction = model.predict(features)[0]
     
+    # Get probability distribution
+    try:
+        probabilities = model.predict_proba(features)[0]
+        classes = model.classes_
+        proba_dict = {str(c): round(float(p), 3) for c, p in zip(classes, probabilities)}
+    except AttributeError:
+        # Fallback if model doesn't support predict_proba
+        proba_dict = {prediction: 1.0}
+        
+    baseline_stats = {
+        'age': 32.1, 
+        'experience_years': 9.6, 
+        'daily_work_hours': 9.0, 
+        'sleep_hours': 6.5, 
+        'caffeine_intake': 3.5, 
+        'bugs_per_day': 9.5, 
+        'commits_per_day': 14.5, 
+        'meetings_per_day': 4.5, 
+        'screen_time': 12.0, 
+        'exercise_hours': 1.0, 
+        'stress_level': 53.7
+    }
+    
     return {
-        "burnout_level": prediction,
+        "burnout_level": str(prediction),
+        "probabilities": proba_dict,
+        "baseline_stats": baseline_stats,
         "metrics": {
             "work_life_balance": round(work_life_balance, 2),
             "productivity_ratio": round(productivity_ratio, 2),

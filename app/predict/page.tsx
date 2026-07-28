@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight, Loader2, Info } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 type Status = "IDLE" | "LOADING" | "TYPING_LOG" | "SHOW_RESULT" | "SIMULATOR";
 
@@ -15,15 +16,14 @@ const TERMINAL_LOGS = [
 ];
 
 export default function PredictorPage() {
+  const router = useRouter();
   const [status, setStatus] = useState<Status>("IDLE");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [baseResult, setBaseResult] = useState<any>(null);
+  const [baseFormData, setBaseFormData] = useState<any>(null);
   const [result, setResult] = useState<any>(null);
 
   // Terminal log typing state
   const [logIndex, setLogIndex] = useState(0);
-
-  // Animated gauge state
-  const [displayScore, setDisplayScore] = useState(0);
 
   const [formData, setFormData] = useState({
     age: 28,
@@ -46,18 +46,6 @@ export default function PredictorPage() {
     }));
   };
 
-  const getTopDrivers = () => {
-    const drivers = [];
-    if (formData.stress_level >= 60) drivers.push({ name: "High Stress", category: "focus" });
-    if (formData.sleep_hours <= 6) drivers.push({ name: "Low Sleep", category: "sleep" });
-    if (formData.caffeine_intake >= 4) drivers.push({ name: "High Caffeine", category: "caffeine" });
-    if (formData.meetings_per_day >= 5) drivers.push({ name: "Meeting Overload", category: "meetings" });
-    if (formData.screen_time >= 10) drivers.push({ name: "High Screen Time", category: "screen-time" });
-    if (formData.exercise_hours <= 1) drivers.push({ name: "Low Movement", category: "movement" });
-    
-    return drivers.slice(0, 3);
-  };
-
   const INPUT_CONFIG = {
     age: { min: 18, max: 80, step: 1 },
     experience_years: { min: 0, max: 50, step: 1 },
@@ -74,9 +62,14 @@ export default function PredictorPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (status === "SIMULATOR") {
+      setStatus("IDLE");
+      setBaseResult(null);
+      setBaseFormData(null);
+    }
+    
     setStatus("LOADING");
     setLogIndex(0);
-    setDisplayScore(0);
 
     try {
       const res = await fetch("/api/predict", {
@@ -89,9 +82,10 @@ export default function PredictorPage() {
       }
       const data = await res.json();
       setResult(data);
+      setBaseResult(data);
+      setBaseFormData({...formData});
       setStatus("TYPING_LOG");
       
-      // Save to localStorage history
       const history = JSON.parse(localStorage.getItem("unwind_history") || "[]");
       history.push({
         timestamp: new Date().toISOString(),
@@ -99,7 +93,6 @@ export default function PredictorPage() {
         result: data
       });
       localStorage.setItem("unwind_history", JSON.stringify(history));
-      // Save latest for dashboard
       localStorage.setItem("unwind_latest_prediction", JSON.stringify({ inputs: formData, result: data }));
     } catch (err) {
       console.error(err);
@@ -108,13 +101,12 @@ export default function PredictorPage() {
     }
   };
 
-  // Handle terminal log typing effect
   useEffect(() => {
     if (status === "TYPING_LOG") {
       if (logIndex < TERMINAL_LOGS.length) {
         const timer = setTimeout(() => {
           setLogIndex((i) => i + 1);
-        }, 300); // 300ms per line
+        }, 300);
         return () => clearTimeout(timer);
       } else {
         setTimeout(() => setStatus("SHOW_RESULT"), 400);
@@ -144,43 +136,84 @@ export default function PredictorPage() {
     return () => clearTimeout(timer);
   }, [formData, status]);
 
-  // Handle gauge animation
-  useEffect(() => {
-    if ((status === "SHOW_RESULT" || status === "SIMULATOR") && result) {
-      // Determine a fake "score" based on risk level for the dial if not provided by API
-      // Since API returns Low, Moderate, High, we map it:
-      const targetScore =
-        result.burnout_level === "High"
-          ? 85
-          : result.burnout_level === "Moderate"
-            ? 55
-            : 25;
-
-      setDisplayScore(targetScore);
-    }
-  }, [status, result]);
-
   const getRiskColor = (level: string) => {
     if (level === "High") return "var(--high)";
-    if (level === "Moderate") return "var(--medium)";
+    if (level === "Moderate" || level === "Medium") return "var(--medium)";
     return "var(--low)";
+  };
+
+  const getDiffText = (key: string, value: number) => {
+    if (!result || !result.baseline_stats) return null;
+    const base = result.baseline_stats[key];
+    if (!base) return null;
+    const diff = value - base;
+    if (Math.abs(diff) < 0.1) return "Average";
+    const dir = diff > 0 ? "higher" : "lower";
+    return `${Math.abs(diff).toFixed(1)} ${dir} than avg`;
+  };
+
+  // Derive contributions (pseudo-SHAP) by comparing current to baseline
+  // If sleep is lower than avg, it pushes risk up (negative effect on well-being)
+  // If meetings are higher than avg, pushes risk up
+  const getContributions = () => {
+    if (!result || !result.baseline_stats) return [];
+    const b = result.baseline_stats;
+    const c = [];
+    
+    // Factors that are BAD when HIGH (pushes risk up)
+    const directBad = ['stress_level', 'meetings_per_day', 'bugs_per_day', 'caffeine_intake', 'screen_time', 'daily_work_hours'];
+    // Factors that are BAD when LOW
+    const inverseBad = ['sleep_hours', 'exercise_hours'];
+
+    for (const key of directBad) {
+      if (formData[key as keyof typeof formData] > b[key] * 1.1) {
+        c.push({ key, name: key.replace(/_/g, " "), value: formData[key as keyof typeof formData] - b[key], type: "up" });
+      } else if (formData[key as keyof typeof formData] < b[key] * 0.9) {
+        c.push({ key, name: key.replace(/_/g, " "), value: b[key] - formData[key as keyof typeof formData], type: "down" });
+      }
+    }
+
+    for (const key of inverseBad) {
+      if (formData[key as keyof typeof formData] < b[key] * 0.9) {
+        c.push({ key, name: key.replace(/_/g, " "), value: b[key] - formData[key as keyof typeof formData], type: "up" });
+      } else if (formData[key as keyof typeof formData] > b[key] * 1.1) {
+        c.push({ key, name: key.replace(/_/g, " "), value: formData[key as keyof typeof formData] - b[key], type: "down" });
+      }
+    }
+
+    return c.sort((a, b) => b.value - a.value).slice(0, 5); // top 5 drivers
+  };
+
+  const handleAddPlan = () => {
+    // Recommend a focus based on the highest driver
+    const topDriver = getContributions().find(c => c.type === "up");
+    let focusName = "Sleep";
+    if (topDriver) {
+      if (topDriver.key.includes("screen")) focusName = "Screen time";
+      if (topDriver.key.includes("exercise")) focusName = "Movement";
+      if (topDriver.key.includes("meetings")) focusName = "Meetings";
+      if (topDriver.key.includes("work")) focusName = "Boundaries";
+      if (topDriver.key.includes("caffeine")) focusName = "Caffeine";
+    }
+    
+    localStorage.setItem("unwind_focus", JSON.stringify({ title: focusName, color: "var(--ink)" }));
+    router.push("/my-unwind");
   };
 
   return (
     <div className="flex-1 bg-dots-bg text-ink selection:bg-ink selection:text-paper">
-      <main className="max-w-5xl mx-auto px-4 py-16">
+      <main className="max-w-6xl mx-auto px-4 py-16">
         <div className="mb-12">
           <h1 className="font-display text-5xl md:text-7xl mb-4">
             Burnout Predictor
           </h1>
           <p className="font-sans text-xl text-grey-text max-w-2xl">
-            Input your weekly averages. Our machine learning model will analyze
-            your cognitive load and predict your burnout risk.
+            Input your weekly averages. Our model analyzes your cognitive load against 7,000 developers to predict burnout risk.
           </p>
         </div>
 
-        <div className="grid md:grid-cols-12 gap-8">
-          <div className="md:col-span-8 brutal-card bg-paper p-8 relative">
+        <div className="grid lg:grid-cols-12 gap-8">
+          <div className="lg:col-span-6 brutal-card bg-paper p-8 relative flex flex-col h-full">
             <div className="absolute top-0 left-0 right-0 h-10 border-b-2 border-ink flex items-center px-4 bg-frame">
               <div className="flex gap-2">
                 <div className="w-3 h-3 rounded-full border-2 border-ink bg-paper"></div>
@@ -193,61 +226,60 @@ export default function PredictorPage() {
 
             <form
               onSubmit={handleSubmit}
-              className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-6"
+              className="mt-8 flex-1 flex flex-col gap-6"
             >
-              {Object.entries(formData).map(([key, value]) => {
-                const config = INPUT_CONFIG[key as keyof typeof INPUT_CONFIG];
-                return (
-                  <div key={key} className="flex flex-col gap-2">
-                    <label className="font-bold text-sm uppercase tracking-wide flex justify-between">
-                      <span>{key.replace(/_/g, " ")}</span>
-                      <span className="text-grey-text">{value}</span>
-                    </label>
-                    <div className="flex items-center gap-4">
-                      <input
-                        type="range"
-                        name={key}
-                        min={config.min}
-                        max={config.max}
-                        step={config.step}
-                        value={value}
-                        onChange={handleChange}
-                        className="flex-1 accent-ink h-2 bg-frame brutal-border appearance-none cursor-pointer"
-                      />
-                      <input
-                        type="number"
-                        name={key}
-                        min={config.min}
-                        max={config.max}
-                        step={config.step}
-                        value={value}
-                        onChange={handleChange}
-                        className="w-20 brutal-border bg-dots-bg p-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-ink"
-                      />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 overflow-y-auto max-h-[60vh] pr-2">
+                {Object.entries(formData).map(([key, value]) => {
+                  const config = INPUT_CONFIG[key as keyof typeof INPUT_CONFIG];
+                  const diffText = getDiffText(key, value);
+                  
+                  return (
+                    <div key={key} className="flex flex-col gap-2">
+                      <label className="font-bold text-sm uppercase tracking-wide flex justify-between">
+                        <span>{key.replace(/_/g, " ")}</span>
+                        <span className="text-ink">{value}</span>
+                      </label>
+                      <div className="flex items-center gap-4">
+                        <input
+                          type="range"
+                          name={key}
+                          min={config.min}
+                          max={config.max}
+                          step={config.step}
+                          value={value}
+                          onChange={handleChange}
+                          className="flex-1 accent-ink h-2 bg-frame brutal-border appearance-none cursor-pointer"
+                        />
+                      </div>
+                      {diffText && (
+                        <div className="text-[10px] font-mono text-grey-text uppercase mt-1">
+                          {diffText}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                );
-              })}
-              <div className="sm:col-span-2 mt-4 flex gap-4">
+                  );
+                })}
+              </div>
+              <div className="mt-4 flex flex-col sm:flex-row gap-4 pt-4 border-t-2 border-ink">
                 <button
                   type="submit"
                   disabled={status === "LOADING" || status === "TYPING_LOG"}
-                  className="flex-1 brutal-btn py-4 text-xl font-bold flex items-center justify-center gap-2"
+                  className="flex-1 brutal-btn py-4 text-lg font-bold flex items-center justify-center gap-2"
                 >
                   {status === "LOADING" || status === "TYPING_LOG" ? (
                     <Loader2 className="animate-spin" />
                   ) : (
-                    "Run Prediction Model"
+                    status === "SIMULATOR" ? "Reset to Baseline" : "Run Prediction"
                   )}
                   {status === "IDLE" || status === "SHOW_RESULT" ? (
-                    <ArrowRight />
+                    <ArrowRight className="w-5 h-5" />
                   ) : null}
                 </button>
                 {(status === "SHOW_RESULT" || status === "SIMULATOR") && (
                   <button
                     type="button"
                     onClick={() => setStatus("SIMULATOR")}
-                    className="brutal-btn py-4 px-6 text-xl font-bold flex items-center justify-center gap-2 border-dashed bg-transparent hover:bg-ink hover:text-paper"
+                    className={`py-4 px-6 text-lg font-bold flex items-center justify-center border-2 border-dashed transition-colors ${status === "SIMULATOR" ? "bg-ink text-paper border-ink" : "border-ink hover:bg-frame"}`}
                   >
                     What-If Simulator
                   </button>
@@ -256,7 +288,7 @@ export default function PredictorPage() {
             </form>
           </div>
 
-          <div className="md:col-span-4 flex flex-col gap-8">
+          <div className="lg:col-span-6 flex flex-col h-full">
             <div className="brutal-card bg-paper p-6 relative flex-1 flex flex-col">
               <div className="absolute top-0 left-0 right-0 h-10 border-b-2 border-ink flex items-center px-4 bg-frame">
                 <div className="font-mono text-xs font-bold">result.log</div>
@@ -264,7 +296,7 @@ export default function PredictorPage() {
 
               <div className="mt-8 flex-1 flex flex-col">
                 {status === "IDLE" && (
-                  <div className="text-grey-text italic mt-4">
+                  <div className="text-grey-text italic mt-4 font-mono">
                     Awaiting input parameters...
                   </div>
                 )}
@@ -288,121 +320,97 @@ export default function PredictorPage() {
 
                 {(status === "SHOW_RESULT" || status === "SIMULATOR") && result && (
                   <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 flex-1 flex flex-col">
-                    <h3 className="font-bold text-sm text-grey-text uppercase mb-2">
-                      Prediction
-                    </h3>
+                    
+                    {status === "SIMULATOR" && baseResult && (
+                      <div className="mb-6 p-4 border-2 border-ink bg-frame animate-in fade-in zoom-in duration-300">
+                        <h3 className="font-bold text-sm text-ink uppercase mb-2">Simulator Mode</h3>
+                        <div className="flex items-center gap-4">
+                          <div className="flex-1">
+                            <div className="text-xs font-mono text-grey-text mb-1">Baseline</div>
+                            <div className="font-bold" style={{ color: getRiskColor(baseResult.burnout_level) }}>{baseResult.burnout_level}</div>
+                          </div>
+                          <ArrowRight className="w-4 h-4" />
+                          <div className="flex-1">
+                            <div className="text-xs font-mono text-grey-text mb-1">Simulated</div>
+                            <div className="font-bold" style={{ color: getRiskColor(result.burnout_level) }}>{result.burnout_level}</div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
-                    <div className="flex items-center gap-4 mb-6">
+                    <div className="flex flex-col gap-2 mb-8">
+                      <h3 className="font-bold text-sm text-grey-text uppercase tracking-widest">
+                        Predicted Class
+                      </h3>
                       <div
-                        className="font-display text-5xl flex-1"
+                        className="font-display text-6xl leading-none"
                         style={{ color: getRiskColor(result.burnout_level) }}
                       >
                         {result.burnout_level} Risk
                       </div>
-                      <div className="w-16 h-16 rounded-full brutal-border flex items-center justify-center font-mono font-bold text-xl relative overflow-hidden bg-frame">
-                        <div
-                          className="absolute bottom-0 left-0 right-0 transition-all duration-300"
-                          style={{
-                            height: `${displayScore}%`,
-                            backgroundColor: getRiskColor(result.burnout_level),
-                            opacity: 0.2,
-                          }}
-                        />
-                        {displayScore}
-                      </div>
+                      
+                      {/* Probabilities */}
+                      {result.probabilities && (
+                        <div className="mt-4 flex gap-1 h-6 w-full brutal-border overflow-hidden bg-frame p-1">
+                          {["Low", "Medium", "High"].map(level => {
+                            const p = result.probabilities[level] || 0;
+                            if (p === 0) return null;
+                            return (
+                              <div 
+                                key={level}
+                                className="h-full flex items-center justify-center text-[10px] font-bold text-paper transition-all"
+                                style={{ width: `${p * 100}%`, backgroundColor: getRiskColor(level) }}
+                                title={`${level}: ${(p * 100).toFixed(1)}%`}
+                              >
+                                {p > 0.15 ? `${(p * 100).toFixed(0)}%` : ""}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
                     </div>
 
-                    {status === "SIMULATOR" && (
-                      <div className="mb-6 p-4 border-2 border-ink bg-frame border-dashed animate-in fade-in zoom-in duration-300">
-                        <h3 className="font-bold text-sm text-ink uppercase mb-4">Simulator Mode</h3>
-                        <p className="text-sm text-grey-text mb-4">Adjust your inputs on the left. Watch how your risk score changes in real-time.</p>
+                    {result.burnout_level === "High" && (
+                      <div className="mb-8 bg-paper border-2 border-high p-4 flex gap-3">
+                        <Info className="text-high shrink-0 w-5 h-5" />
+                        <p className="text-sm font-bold text-ink">
+                          This isn't medical advice — if it's more than a rough week, talking to a professional is a strong move. Take it easy.
+                        </p>
                       </div>
                     )}
 
-                    <h3 className="font-bold text-sm text-grey-text uppercase mb-3">
-                      Key Factors
+                    <h3 className="font-bold text-sm text-grey-text uppercase mb-4 tracking-widest">
+                      Contribution Breakdown
                     </h3>
-                    <div className="space-y-4 mb-8">
-                      {/* Factor 1 */}
-                      <div>
-                        <div className="flex justify-between text-xs font-mono mb-1">
-                          <span>Work/Life Balance</span>
-                          <span>
-                            {result.metrics.work_life_balance.toFixed(2)}
-                          </span>
+                    <div className="space-y-4 mb-8 flex-1">
+                      {getContributions().map((c, i) => (
+                        <div key={i} className="flex flex-col gap-1">
+                          <div className="flex justify-between text-xs font-mono font-bold">
+                            <span className="uppercase">{c.name}</span>
+                            <span className={c.type === "up" ? "text-high" : "text-low"}>
+                              {c.type === "up" ? "↑ Increased Risk" : "↓ Lowered Risk"}
+                            </span>
+                          </div>
+                          <div className="h-2 w-full bg-frame brutal-border overflow-hidden relative">
+                            {/* Center line */}
+                            <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-ink z-10" />
+                            {c.type === "up" ? (
+                              <div className="absolute left-1/2 top-0 bottom-0 bg-high" style={{ width: `${Math.min(50, c.value * 10)}%` }} />
+                            ) : (
+                              <div className="absolute right-1/2 top-0 bottom-0 bg-low" style={{ width: `${Math.min(50, c.value * 10)}%` }} />
+                            )}
+                          </div>
                         </div>
-                        <div className="h-2 w-full bg-frame brutal-border overflow-hidden">
-                          <div
-                            className="h-full bg-ink"
-                            style={{
-                              width: `${Math.min(100, result.metrics.work_life_balance * 20)}%`,
-                            }}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Factor 2 */}
-                      <div>
-                        <div className="flex justify-between text-xs font-mono mb-1">
-                          <span>Cognitive Load</span>
-                          <span>
-                            {result.metrics.cognitive_load.toFixed(2)}
-                          </span>
-                        </div>
-                        <div className="h-2 w-full bg-frame brutal-border overflow-hidden">
-                          <div
-                            className="h-full bg-ink"
-                            style={{
-                              width: `${Math.min(100, result.metrics.cognitive_load * 10)}%`,
-                            }}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Factor 3 */}
-                      <div>
-                        <div className="flex justify-between text-xs font-mono mb-1">
-                          <span>Caffeine / Sleep</span>
-                          <span>
-                            {result.metrics.caffeine_per_sleep.toFixed(2)}
-                          </span>
-                        </div>
-                        <div className="h-2 w-full bg-frame brutal-border overflow-hidden">
-                          <div
-                            className="h-full bg-ink"
-                            style={{
-                              width: `${Math.min(100, result.metrics.caffeine_per_sleep * 30)}%`,
-                            }}
-                          />
-                        </div>
-                      </div>
+                      ))}
                     </div>
 
-                    {getTopDrivers().length > 0 && (
-                      <div className="mb-8">
-                        <h3 className="font-bold text-sm text-grey-text uppercase mb-3">Top Actionable Drivers</h3>
-                        <div className="flex flex-wrap gap-3">
-                          {getTopDrivers().map((driver, idx) => (
-                            <Link
-                              key={idx}
-                              href={`/tips#${driver.category}`}
-                              className="px-4 py-2 border-2 border-ink text-sm font-bold bg-frame hover:bg-ink hover:text-paper transition-colors"
-                            >
-                              {driver.name} &rarr;
-                            </Link>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="mt-auto">
-                      <Link
-                        href="/tips"
-                        className="text-sm font-bold underline underline-offset-4 hover:text-grey-text flex items-center gap-1"
+                    <div className="mt-auto pt-6 border-t-2 border-ink">
+                      <button
+                        onClick={handleAddPlan}
+                        className="w-full brutal-btn py-3 text-sm font-bold flex items-center justify-center gap-2 bg-ink text-paper"
                       >
-                        View recommended habits{" "}
-                        <ArrowRight className="w-4 h-4" />
-                      </Link>
+                        Add to my weekly plan <ArrowRight className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
                 )}
