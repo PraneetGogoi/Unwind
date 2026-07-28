@@ -84,6 +84,9 @@ export default function PredictorPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
+      if (!res.ok) {
+        throw new Error(`API Error: ${res.status}`);
+      }
       const data = await res.json();
       setResult(data);
       setStatus("TYPING_LOG");
@@ -129,6 +132,9 @@ export default function PredictorPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(formData),
         });
+        if (!res.ok) {
+          throw new Error(`API Error: ${res.status}`);
+        }
         const data = await res.json();
         setResult(data);
       } catch (err) {
