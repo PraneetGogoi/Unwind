@@ -40,7 +40,7 @@ export function getSignalAveragesChart(userMetrics?: any) {
     data,
     layout: {
       barmode: "group",
-      title: "Average Signals by Risk Level"
+      title: { text: "Average Signals by Risk Level" }
     }
   };
 }
@@ -75,7 +75,7 @@ export function getBoxPlotChart(userMetrics?: any) {
   return {
     data,
     layout: {
-      title: "Stress Level Distribution"
+      title: { text: "Stress Level Distribution" }
     }
   };
 }
@@ -98,7 +98,7 @@ export function getSegmentChart() {
     data,
     layout: {
       barmode: "stack",
-      title: "Burnout Risk by Experience Tier"
+      title: { text: "Burnout Risk by Experience Tier" }
     }
   };
 }
@@ -126,7 +126,7 @@ export function getRadarChart() {
       polar: {
         radialaxis: { visible: false, range: [0, 1] }
       },
-      title: "Risk Profiles (Normalized)"
+      title: { text: "Risk Profiles (Normalized)" }
     }
   };
 }
