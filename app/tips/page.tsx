@@ -1,4 +1,3 @@
-import { AppLayout } from "@/components/AppLayout";
 import { Card } from "@/components/ui/card";
 import { Moon, Coffee, Activity, Brain, Users, Monitor } from "lucide-react";
 
@@ -55,17 +54,16 @@ const CATEGORIES = [
 
 export default function TipsPage() {
   return (
-    <AppLayout>
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-10">
-        <header className="max-w-2xl">
-          <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Recovery</p>
-          <h1 className="font-display text-4xl sm:text-5xl mt-2">Small habits, kinder weeks.</h1>
-          <p className="text-muted-foreground mt-3">
-            Six categories drawn from the strongest signals in the dataset. Pick one this week — that's enough.
-          </p>
-        </header>
+    <main className="mx-auto max-w-7xl px-4 sm:px-6 py-10">
+      <header className="max-w-2xl">
+        <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Recovery</p>
+        <h1 className="font-display text-4xl sm:text-5xl mt-2">Small habits, kinder weeks.</h1>
+        <p className="text-muted-foreground mt-3">
+          Six categories drawn from the strongest signals in the dataset. Pick one this week — that's enough.
+        </p>
+      </header>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 mt-10">
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 mt-10">
           {CATEGORIES.map(c => (
             <Card key={c.title} className="p-6 glass border-0 shadow-soft hover:shadow-glow transition">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl" style={{ backgroundColor: `color-mix(in oklab, ${c.color} 18%, transparent)`, color: c.color }}>
@@ -83,7 +81,6 @@ export default function TipsPage() {
             </Card>
           ))}
         </div>
-      </div>
-    </AppLayout>
+      </main>
   );
 }

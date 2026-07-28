@@ -22,16 +22,21 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Hello, I'm Mac — Retro Portfolio",
-  description: "A neo-brutalist portfolio template.",
+  title: "Unwind — Dev Burnout Lab",
+  description: "Turns developer burnout signals into actionable insights.",
 };
+
+import { Header } from "@/components/Header";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning className={`${baloo.variable} ${karla.variable} ${jetbrains.variable}`}>
       <body className="font-sans bg-dots-bg text-ink antialiased">
         <ThemeProvider>
-          {children}
+          <Header />
+          <div className="min-h-[calc(100vh-4rem)]">
+            {children}
+          </div>
         </ThemeProvider>
       </body>
     </html>

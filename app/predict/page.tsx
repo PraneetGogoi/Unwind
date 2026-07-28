@@ -1,12 +1,28 @@
 "use client";
 
-import { useState } from "react";
-import { Header } from "@/components/Header";
+import { useState, useEffect } from "react";
 import { ArrowRight, Loader2 } from "lucide-react";
+import Link from "next/link";
+
+type Status = "IDLE" | "LOADING" | "TYPING_LOG" | "SHOW_RESULT";
+
+const TERMINAL_LOGS = [
+  "> Initializing burnout predictor...",
+  "> Loading weights...",
+  "> Analyzing feature set...",
+  "> Scoring cognitive load...",
+  "> Done."
+];
 
 export default function PredictorPage() {
-  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState<Status>("IDLE");
   const [result, setResult] = useState<any>(null);
+  
+  // Terminal log typing state
+  const [logIndex, setLogIndex] = useState(0);
+
+  // Animated gauge state
+  const [displayScore, setDisplayScore] = useState(0);
   
   const [formData, setFormData] = useState({
     age: 28,
@@ -31,7 +47,10 @@ export default function PredictorPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setStatus("LOADING");
+    setLogIndex(0);
+    setDisplayScore(0);
+    
     try {
       const res = await fetch("/api/predict", {
         method: "POST",
@@ -40,23 +59,62 @@ export default function PredictorPage() {
       });
       const data = await res.json();
       setResult(data);
+      setStatus("TYPING_LOG");
     } catch (err) {
       console.error(err);
       alert("Failed to connect to the prediction API.");
-    } finally {
-      setLoading(false);
+      setStatus("IDLE");
     }
   };
 
-  return (
-    <div className="min-h-screen bg-dots-bg text-ink selection:bg-ink selection:text-paper">
-      <Header />
+  // Handle terminal log typing effect
+  useEffect(() => {
+    if (status === "TYPING_LOG") {
+      if (logIndex < TERMINAL_LOGS.length) {
+        const timer = setTimeout(() => {
+          setLogIndex(i => i + 1);
+        }, 300); // 300ms per line
+        return () => clearTimeout(timer);
+      } else {
+        setTimeout(() => setStatus("SHOW_RESULT"), 400);
+      }
+    }
+  }, [status, logIndex]);
 
+  // Handle gauge animation
+  useEffect(() => {
+    if (status === "SHOW_RESULT" && result) {
+      // Determine a fake "score" based on risk level for the dial if not provided by API
+      // Since API returns Low, Moderate, High, we map it:
+      const targetScore = result.burnout_level === "High" ? 85 : result.burnout_level === "Moderate" ? 55 : 25;
+      
+      let current = 0;
+      const interval = setInterval(() => {
+        current += 3;
+        if (current >= targetScore) {
+          setDisplayScore(targetScore);
+          clearInterval(interval);
+        } else {
+          setDisplayScore(current);
+        }
+      }, 20);
+      return () => clearInterval(interval);
+    }
+  }, [status, result]);
+
+  const getRiskColor = (level: string) => {
+    if (level === "High") return "var(--high)";
+    if (level === "Moderate") return "var(--medium)";
+    return "var(--low)";
+  };
+
+  return (
+    <div className="flex-1 bg-dots-bg text-ink selection:bg-ink selection:text-paper">
       <main className="max-w-5xl mx-auto px-4 py-16">
         <div className="mb-12">
           <h1 className="font-display text-5xl md:text-7xl mb-4">Burnout Predictor</h1>
           <p className="font-sans text-xl text-grey-text max-w-2xl">
-            Input your weekly averages. Our machine learning model trained on 7,000 developers will analyze your cognitive load and predict your burnout risk.
+            Input your weekly averages. Our machine learning model will analyze your cognitive load and predict your burnout risk.
           </p>
         </div>
 
@@ -73,8 +131,8 @@ export default function PredictorPage() {
             <form onSubmit={handleSubmit} className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
               {Object.entries(formData).map(([key, value]) => (
                 <div key={key} className="flex flex-col">
-                  <label className="font-bold text-sm mb-2 uppercase tracking-wide">
-                    {key.replace(/_/g, " ")}
+                  <label className="font-bold text-sm mb-2 uppercase tracking-wide flex justify-between">
+                    <span>{key.replace(/_/g, " ")}</span>
                   </label>
                   <input 
                     type="number"
@@ -89,53 +147,102 @@ export default function PredictorPage() {
               <div className="sm:col-span-2 mt-4">
                 <button 
                   type="submit" 
-                  disabled={loading}
+                  disabled={status === "LOADING" || status === "TYPING_LOG"}
                   className="w-full brutal-btn py-4 text-xl font-bold flex items-center justify-center gap-2"
                 >
-                  {loading ? <Loader2 className="animate-spin" /> : "Run Prediction Model"} 
-                  {!loading && <ArrowRight />}
+                  {(status === "LOADING" || status === "TYPING_LOG") ? <Loader2 className="animate-spin" /> : "Run Prediction Model"} 
+                  {status === "IDLE" || status === "SHOW_RESULT" ? <ArrowRight /> : null}
                 </button>
               </div>
             </form>
           </div>
 
           <div className="md:col-span-4 flex flex-col gap-8">
-            <div className="brutal-card bg-paper p-6 relative flex-1">
+            <div className="brutal-card bg-paper p-6 relative flex-1 flex flex-col">
               <div className="absolute top-0 left-0 right-0 h-10 border-b-2 border-ink flex items-center px-4 bg-frame">
                 <div className="font-mono text-xs font-bold">result.log</div>
               </div>
               
-              <div className="mt-8">
-                <h3 className="font-bold text-sm text-grey-text uppercase mb-2">Prediction</h3>
-                {result ? (
-                  <div>
-                    <div className="font-display text-5xl mb-6">
-                      {result.burnout_level} Risk
-                    </div>
-                    
-                    <h3 className="font-bold text-sm text-grey-text uppercase mb-2">Calculated Metrics</h3>
-                    <ul className="space-y-3 font-mono text-sm">
-                      <li className="flex justify-between border-b-2 border-ink border-dashed pb-1">
-                        <span>Work/Life Balance</span>
-                        <span className="font-bold">{result.metrics.work_life_balance}</span>
-                      </li>
-                      <li className="flex justify-between border-b-2 border-ink border-dashed pb-1">
-                        <span>Cognitive Load</span>
-                        <span className="font-bold">{result.metrics.cognitive_load}</span>
-                      </li>
-                      <li className="flex justify-between border-b-2 border-ink border-dashed pb-1">
-                        <span>Productivity Ratio</span>
-                        <span className="font-bold">{result.metrics.productivity_ratio}</span>
-                      </li>
-                      <li className="flex justify-between border-b-2 border-ink border-dashed pb-1">
-                        <span>Caffeine/Sleep</span>
-                        <span className="font-bold">{result.metrics.caffeine_per_sleep}</span>
-                      </li>
-                    </ul>
-                  </div>
-                ) : (
+              <div className="mt-8 flex-1 flex flex-col">
+                {status === "IDLE" && (
                   <div className="text-grey-text italic mt-4">
                     Awaiting input parameters...
+                  </div>
+                )}
+
+                {(status === "TYPING_LOG" || status === "SHOW_RESULT") && (
+                  <div className="font-mono text-sm space-y-1 mb-6">
+                    {TERMINAL_LOGS.slice(0, logIndex).map((log, i) => (
+                      <div key={i} className="animate-in fade-in slide-in-from-bottom-1">{log}</div>
+                    ))}
+                    {status === "TYPING_LOG" && logIndex < TERMINAL_LOGS.length && (
+                      <div className="animate-pulse">_</div>
+                    )}
+                  </div>
+                )}
+
+                {status === "SHOW_RESULT" && result && (
+                  <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 flex-1 flex flex-col">
+                    <h3 className="font-bold text-sm text-grey-text uppercase mb-2">Prediction</h3>
+                    
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="font-display text-5xl flex-1" style={{ color: getRiskColor(result.burnout_level) }}>
+                        {result.burnout_level} Risk
+                      </div>
+                      <div className="w-16 h-16 rounded-full brutal-border flex items-center justify-center font-mono font-bold text-xl relative overflow-hidden bg-frame">
+                        <div 
+                          className="absolute bottom-0 left-0 right-0 transition-all duration-300"
+                          style={{ 
+                            height: `${displayScore}%`, 
+                            backgroundColor: getRiskColor(result.burnout_level),
+                            opacity: 0.2 
+                          }}
+                        />
+                        {displayScore}
+                      </div>
+                    </div>
+                    
+                    <h3 className="font-bold text-sm text-grey-text uppercase mb-3">Key Factors</h3>
+                    <div className="space-y-4 mb-8">
+                      {/* Factor 1 */}
+                      <div>
+                        <div className="flex justify-between text-xs font-mono mb-1">
+                          <span>Work/Life Balance</span>
+                          <span>{result.metrics.work_life_balance.toFixed(2)}</span>
+                        </div>
+                        <div className="h-2 w-full bg-frame brutal-border overflow-hidden">
+                          <div className="h-full bg-ink" style={{ width: `${Math.min(100, result.metrics.work_life_balance * 20)}%` }} />
+                        </div>
+                      </div>
+                      
+                      {/* Factor 2 */}
+                      <div>
+                        <div className="flex justify-between text-xs font-mono mb-1">
+                          <span>Cognitive Load</span>
+                          <span>{result.metrics.cognitive_load.toFixed(2)}</span>
+                        </div>
+                        <div className="h-2 w-full bg-frame brutal-border overflow-hidden">
+                          <div className="h-full bg-ink" style={{ width: `${Math.min(100, result.metrics.cognitive_load * 10)}%` }} />
+                        </div>
+                      </div>
+                      
+                      {/* Factor 3 */}
+                      <div>
+                        <div className="flex justify-between text-xs font-mono mb-1">
+                          <span>Caffeine / Sleep</span>
+                          <span>{result.metrics.caffeine_per_sleep.toFixed(2)}</span>
+                        </div>
+                        <div className="h-2 w-full bg-frame brutal-border overflow-hidden">
+                          <div className="h-full bg-ink" style={{ width: `${Math.min(100, result.metrics.caffeine_per_sleep * 30)}%` }} />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-auto">
+                      <Link href="/tips" className="text-sm font-bold underline underline-offset-4 hover:text-grey-text flex items-center gap-1">
+                        View recommended habits <ArrowRight className="w-4 h-4" />
+                      </Link>
+                    </div>
                   </div>
                 )}
               </div>

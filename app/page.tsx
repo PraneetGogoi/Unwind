@@ -1,14 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { Header } from "@/components/Header";
 import { ArrowUpRight } from "lucide-react";
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-dots-bg text-ink selection:bg-ink selection:text-paper">
-      <Header />
-
       <main className="max-w-5xl mx-auto px-4 py-16 sm:py-24">
         {/* hero */}
         <section className="flex flex-col md:flex-row gap-12 items-start justify-between">

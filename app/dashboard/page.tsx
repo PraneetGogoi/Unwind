@@ -1,11 +1,9 @@
 "use client";
 
-import { Header } from "@/components/Header";
 
 export default function DashboardPage() {
   return (
-    <div className="min-h-screen bg-dots-bg text-ink selection:bg-ink selection:text-paper">
-      <Header />
+    <div className="flex-1 bg-dots-bg text-ink selection:bg-ink selection:text-paper">
       <main className="max-w-5xl mx-auto px-4 py-16">
         <h1 className="font-display text-5xl md:text-7xl mb-8">Burnout Analytics</h1>
         <div className="brutal-card bg-paper p-8">
