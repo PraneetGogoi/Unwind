@@ -7,14 +7,6 @@ import { useRouter } from "next/navigation";
 
 type Status = "IDLE" | "LOADING" | "SHOW_RESULT" | "SIMULATOR";
 
-const TERMINAL_LOGS = [
-  "> Initializing burnout predictor...",
-  "> Loading weights...",
-  "> Analyzing feature set...",
-  "> Scoring cognitive load...",
-  "> Done.",
-];
-
 export default function PredictorPage() {
   const router = useRouter();
   const [status, setStatus] = useState<Status>("IDLE");
@@ -278,22 +270,7 @@ export default function PredictorPage() {
                   </div>
                 )}
 
-                {(status === "TYPING_LOG" || status === "SHOW_RESULT") && (
-                  <div className="font-mono text-sm space-y-1 mb-6">
-                    {TERMINAL_LOGS.slice(0, logIndex).map((log, i) => (
-                      <div
-                        key={i}
-                        className="animate-in fade-in slide-in-from-bottom-1"
-                      >
-                        {log}
-                      </div>
-                    ))}
-                    {status === "TYPING_LOG" &&
-                      logIndex < TERMINAL_LOGS.length && (
-                        <div className="animate-pulse">_</div>
-                      )}
-                  </div>
-                )}
+
 
                 {(status === "SHOW_RESULT" || status === "SIMULATOR") && result && (
                   <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 flex-1 flex flex-col">
