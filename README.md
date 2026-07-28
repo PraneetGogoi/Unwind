@@ -1,4 +1,3 @@
-
 # 🧘‍♂️ Unwind — The Quiet Science of Staying Well at the Keyboard
 
 > Turning burnout signals into actionable insights with data, ML, and guided breathing.
@@ -13,14 +12,12 @@
 
 The platform combines:
 
-* 📊 Data visualization
-* 🤖 Machine Learning models
-* 🧠 Behavioral insights
-* 🌬️ Guided breathing exercises (4-7-8 technique)
-
+- 📊 Data visualization
+- 🤖 Machine Learning models
+- 🧠 Behavioral insights
+- 🌬️ Guided breathing exercises (4-7-8 technique)
 
 <img width="1710" height="989" alt="Screenshot 2026-04-18 at 9 45 29 AM" src="https://github.com/user-attachments/assets/fc18c8e9-0016-47c1-98d6-cbd1d89cd0d8" />
-
 
 ---
 
@@ -28,26 +25,26 @@ The platform combines:
 
 ### 📊 Live Dashboard
 
-* Interactive data visualizations using Plotly
-* Insights into workload, habits, and trends
-* Correlation and pattern analysis
+- Interactive data visualizations using Plotly
+- Insights into workload, habits, and trends
+- Correlation and pattern analysis
 
 ### 🤖 Burnout Predictor
 
-* ML-based risk prediction
-* Uses weighted feature importance
-* Helps identify early burnout signals
+- ML-based risk prediction
+- Uses weighted feature importance
+- Helps identify early burnout signals
 
 ### 🌬️ 4-7-8 Breathing Tool
 
-* Scientifically backed breathing exercise
-* Helps reduce stress and anxiety
-* Minimal UI for focused relaxation
+- Scientifically backed breathing exercise
+- Helps reduce stress and anxiety
+- Minimal UI for focused relaxation
 
 ### 📈 Insights Engine
 
-* Converts raw data into meaningful recommendations
-* Tracks developer wellness over time
+- Converts raw data into meaningful recommendations
+- Tracks developer wellness over time
 
 ---
 
@@ -55,10 +52,10 @@ The platform combines:
 
 Unwind collects and processes signals such as:
 
-* Sleep patterns 😴
-* Caffeine intake ☕
-* Git commits 💻
-* Meeting load 📅
+- Sleep patterns 😴
+- Caffeine intake ☕
+- Git commits 💻
+- Meeting load 📅
 
 These are fed into ML models to:
 
@@ -70,11 +67,11 @@ These are fed into ML models to:
 
 ## 🛠️ Tech Stack
 
-* **Frontend:** React / Next.js (UI, animations, UX)
-* **Backend:** Node.js / Python (API & ML integration)
-* **ML Models:** Scikit-learn / TensorFlow
-* **Visualization:** Plotly
-* **Styling:** Tailwind CSS / Custom gradients
+- **Frontend:** React / Next.js (UI, animations, UX)
+- **Backend:** Node.js / Python (API & ML integration)
+- **ML Models:** Scikit-learn / TensorFlow
+- **Visualization:** Plotly
+- **Styling:** Tailwind CSS / Custom gradients
 
 ---
 
@@ -141,27 +138,27 @@ python app.py
 
 ## 📊 Stats
 
-* 👨‍💻 7,000+ developers analyzed
-* ⚠️ 12 burnout signals tracked
-* 🤖 4 ML models compared
+- 👨‍💻 7,000+ developers analyzed
+- ⚠️ 12 burnout signals tracked
+- 🤖 4 ML models compared
 
 ---
 
 ## 🎯 Use Cases
 
-* Developers experiencing burnout
-* Students managing workload stress
-* Remote workers tracking productivity & wellness
-* Teams monitoring collective health trends
+- Developers experiencing burnout
+- Students managing workload stress
+- Remote workers tracking productivity & wellness
+- Teams monitoring collective health trends
 
 ---
 
 ## 🔮 Future Improvements
 
-* 🔗 GitHub & calendar API integration
-* 📱 Mobile app version
-* 🧠 Advanced deep learning models
-* 🧑‍🤝‍🧑 Team-based analytics dashboard
+- 🔗 GitHub & calendar API integration
+- 📱 Mobile app version
+- 🧠 Advanced deep learning models
+- 🧑‍🤝‍🧑 Team-based analytics dashboard
 
 ---
 

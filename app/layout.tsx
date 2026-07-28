@@ -28,15 +28,21 @@ export const metadata: Metadata = {
 
 import { Header } from "@/components/Header";
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${baloo.variable} ${karla.variable} ${jetbrains.variable}`}>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${baloo.variable} ${karla.variable} ${jetbrains.variable}`}
+    >
       <body className="font-sans bg-dots-bg text-ink antialiased">
         <ThemeProvider>
           <Header />
-          <div className="min-h-[calc(100vh-4rem)]">
-            {children}
-          </div>
+          <div className="min-h-[calc(100vh-4rem)]">{children}</div>
         </ThemeProvider>
       </body>
     </html>

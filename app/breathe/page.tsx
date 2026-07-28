@@ -62,9 +62,11 @@ export default function BreathePage() {
 
   const getOrbScale = () => {
     if (phase === "IDLE" || phase === "DONE") return "scale-50";
-    if (phase === "INHALE") return "scale-100 transition-transform duration-[4000ms] ease-out";
+    if (phase === "INHALE")
+      return "scale-100 transition-transform duration-[4000ms] ease-out";
     if (phase === "HOLD") return "scale-100";
-    if (phase === "EXHALE") return "scale-50 transition-transform duration-[8000ms] ease-in-out";
+    if (phase === "EXHALE")
+      return "scale-50 transition-transform duration-[8000ms] ease-in-out";
     return "scale-50";
   };
 
@@ -85,7 +87,7 @@ export default function BreathePage() {
             <p className="font-sans text-xl text-grey-text mb-12">
               Feeling steadier? Taking a moment to breathe is the best reset.
             </p>
-            <Link 
+            <Link
               href="/tips"
               className="brutal-btn inline-flex items-center gap-2 px-8 py-4 font-bold text-lg"
             >
@@ -94,23 +96,25 @@ export default function BreathePage() {
           </div>
         ) : (
           <>
-            <h1 className="font-display text-5xl md:text-7xl mb-8">4-7-8 Breathing</h1>
+            <h1 className="font-display text-5xl md:text-7xl mb-8">
+              4-7-8 Breathing
+            </h1>
             <p className="font-sans text-xl text-grey-text mb-12 h-8">
-              {phase === "IDLE" 
-                ? "Inhale for 4s, hold for 7s, exhale for 8s. Repeat 4 times." 
+              {phase === "IDLE"
+                ? "Inhale for 4s, hold for 7s, exhale for 8s. Repeat 4 times."
                 : `Round ${round} of 4`}
             </p>
-            
-            <button 
+
+            <button
               onClick={phase === "IDLE" ? startSession : undefined}
               className={`w-64 h-64 rounded-full border-4 border-ink bg-paper shadow-hard flex items-center justify-center relative overflow-hidden ${phase === "IDLE" ? "cursor-pointer hover:shadow-hard-hover active:translate-y-1 active:translate-x-1 active:shadow-none transition-all" : "cursor-default"}`}
             >
               {/* The animating background orb */}
-              <div 
-                className={`absolute inset-0 bg-frame opacity-50 rounded-full ${getOrbScale()}`} 
+              <div
+                className={`absolute inset-0 bg-frame opacity-50 rounded-full ${getOrbScale()}`}
                 style={{ transformOrigin: "center" }}
               />
-              
+
               {/* Text content inside orb */}
               <div className="z-10 flex flex-col items-center">
                 <span className="font-display text-3xl">{getPhaseLabel()}</span>
@@ -121,7 +125,7 @@ export default function BreathePage() {
             </button>
 
             {phase !== "IDLE" && (
-              <button 
+              <button
                 onClick={() => setPhase("IDLE")}
                 className="mt-12 text-sm font-bold text-grey-text hover:text-ink underline underline-offset-4"
               >

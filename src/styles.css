@@ -24,37 +24,50 @@
   * {
     border-color: var(--color-ink);
   }
-  html, body {
+  html,
+  body {
     background-color: var(--color-dots-bg);
     color: var(--color-ink);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
   }
-  h1, h2, h3, .font-display {
+  h1,
+  h2,
+  h3,
+  .font-display {
     font-family: var(--font-display);
     letter-spacing: -0.02em;
   }
 }
 
 @layer utilities {
-  .shadow-hard { box-shadow: var(--shadow-hard); }
-  .shadow-hard-sm { box-shadow: var(--shadow-hard-sm); }
-  
+  .shadow-hard {
+    box-shadow: var(--shadow-hard);
+  }
+  .shadow-hard-sm {
+    box-shadow: var(--shadow-hard-sm);
+  }
+
   .bg-halftone {
     background-color: var(--color-dots-bg);
-    background-image: radial-gradient(var(--color-ink) 1.5px, transparent 1.5px);
+    background-image: radial-gradient(
+      var(--color-ink) 1.5px,
+      transparent 1.5px
+    );
     background-size: 10px 10px;
   }
-  
+
   .brutal-border {
     border: 2px solid var(--color-ink);
   }
-  
+
   .brutal-btn {
     border: 2px solid var(--color-ink);
     box-shadow: var(--shadow-hard);
     background-color: var(--color-frame);
-    transition: transform 150ms ease, box-shadow 150ms ease;
+    transition:
+      transform 150ms ease,
+      box-shadow 150ms ease;
   }
   @media (prefers-reduced-motion: no-preference) {
     .brutal-btn:hover {
@@ -66,12 +79,14 @@
       box-shadow: var(--shadow-none);
     }
   }
-  
+
   .brutal-card {
     border: 2px solid var(--color-ink);
     box-shadow: var(--shadow-hard);
     background-color: var(--color-paper);
-    transition: box-shadow 150ms ease, transform 150ms ease;
+    transition:
+      box-shadow 150ms ease,
+      transform 150ms ease;
   }
   @media (prefers-reduced-motion: no-preference) {
     .brutal-card:hover {
@@ -79,6 +94,8 @@
       box-shadow: 6px 6px 0px var(--color-ink);
     }
   }
-  
-  .text-balance { text-wrap: balance; }
+
+  .text-balance {
+    text-wrap: balance;
+  }
 }

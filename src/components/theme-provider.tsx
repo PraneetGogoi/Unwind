@@ -24,7 +24,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const setTheme = React.useCallback((t: Theme) => {
     setThemeState(t);
     document.documentElement.classList.toggle("dark", t === "dark");
-    try { localStorage.setItem("theme", t); } catch (e) { console.error(e); }
+    try {
+      localStorage.setItem("theme", t);
+    } catch (e) {
+      console.error(e);
+    }
   }, []);
 
   const toggle = React.useCallback(
