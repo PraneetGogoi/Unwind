@@ -129,11 +129,13 @@ export default function MyUnwindPage() {
                     <h3 className="font-display text-6xl mb-2" style={{ color: `var(--${latestPrediction.result.burnout_level.toLowerCase()})` }}>
                       {latestPrediction.result.burnout_level}
                     </h3>
-                    <p className="font-bold text-muted-foreground text-lg mb-6">
-                      Score: {latestPrediction.result.burnout_score.toFixed(1)} / 100
-                      <br/>
-                      <span className="text-sm font-mono uppercase tracking-wider">Last checked: {new Date(latestPrediction.timestamp).toLocaleDateString()}</span>
-                    </p>
+                    {latestPrediction.result.probabilities && (
+                      <p className="font-bold text-muted-foreground text-lg mb-6">
+                        Score: {((latestPrediction.result.probabilities["High"] || 0) * 100 + (latestPrediction.result.probabilities["Medium"] || 0) * 50).toFixed(1)} / 100
+                        <br/>
+                        <span className="text-sm font-mono uppercase tracking-wider">Last checked: {new Date(latestPrediction.timestamp).toLocaleDateString()}</span>
+                      </p>
+                    )}
                   </div>
                   <Link href="/predict" className="brutal-btn brutal-btn-primary w-full py-4 font-bold text-lg text-center">
                     Re-run Prediction
