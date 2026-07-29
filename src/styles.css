@@ -112,9 +112,9 @@
     right: -2px;
     bottom: -2px;
     border: inherit;
-    background-color: var(--color-ink);
+    box-shadow: var(--btn-offset) var(--btn-offset) 0px var(--color-ink);
     z-index: -1;
-    transform: translate(var(--btn-offset), var(--btn-offset));
+    transform: translate(0px, 0px);
     transition: transform var(--press-duration-up) var(--press-easing);
     pointer-events: none;
   }
@@ -133,7 +133,7 @@
       transition-duration: var(--press-duration-down);
     }
     .brutal-btn:hover::after {
-      transform: translate(calc(var(--btn-offset) / 2), calc(var(--btn-offset) / 2));
+      transform: translate(calc(var(--btn-offset) / -2), calc(var(--btn-offset) / -2));
       transition-duration: var(--press-duration-down);
     }
     .brutal-btn:hover .arrow-icon {
@@ -147,7 +147,7 @@
     }
     .brutal-btn:active::after,
     .brutal-btn-loading::after {
-      transform: translate(0px, 0px);
+      transform: translate(calc(var(--btn-offset) * -1), calc(var(--btn-offset) * -1));
       transition-duration: var(--press-duration-down);
     }
   }
@@ -185,9 +185,9 @@
     right: -2px;
     bottom: -2px;
     border: inherit;
-    background-color: var(--color-ink);
+    box-shadow: var(--btn-offset) var(--btn-offset) 0px var(--color-ink);
     z-index: -1;
-    transform: translate(var(--btn-offset), var(--btn-offset));
+    transform: translate(0px, 0px);
     transition: transform var(--press-duration-up) var(--press-easing);
     pointer-events: none;
   }
@@ -196,7 +196,7 @@
       transform: translate(-1px, -1px);
     }
     .brutal-card:hover::after {
-      transform: translate(calc(var(--btn-offset) + 2px), calc(var(--btn-offset) + 2px));
+      transform: translate(1px, 1px);
     }
   }
 
