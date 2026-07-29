@@ -134,7 +134,7 @@ export default function MyUnwindPage() {
                   </div>
                   <button 
                     onClick={handleCheckIn}
-                    className="brutal-btn w-full py-3 font-bold text-lg"
+                    className="brutal-btn brutal-btn-primary w-full py-3 font-bold text-lg"
                   >
                     Log today
                   </button>
@@ -160,14 +160,14 @@ export default function MyUnwindPage() {
                     <CheckCircle2 className="w-5 h-5 text-ink" />
                     <span>{streak} kinder days so far</span>
                   </div>
-                  <Link href="/tips" className="mt-6 inline-flex items-center gap-2 text-sm font-bold hover:underline">
-                    Change focus <ArrowRight className="w-4 h-4" />
+                  <Link href="/tips" className="mt-6 inline-flex items-center gap-2 text-sm font-bold hover:underline group">
+                    Change focus <ArrowRight className="w-4 h-4 arrow-icon group-hover:translate-x-1 transition-transform" />
                   </Link>
                 </div>
               ) : (
                 <div className="relative z-10 text-center py-8 border-2 border-dashed border-ink rounded-[3px]">
                   <p className="font-bold mb-6">You haven't picked a focus yet.</p>
-                  <Link href="/tips" className="brutal-btn inline-block px-6 py-3 font-bold">
+                  <Link href="/tips" className="brutal-btn brutal-btn-primary inline-block px-6 py-3 font-bold">
                     Pick a focus
                   </Link>
                 </div>

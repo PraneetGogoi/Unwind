@@ -233,7 +233,7 @@ export default function PredictorPage() {
                 <button
                   type="submit"
                   disabled={status === "LOADING"}
-                  className="flex-1 brutal-btn py-4 text-lg font-bold flex items-center justify-center gap-2"
+                  className={`flex-1 brutal-btn brutal-btn-primary py-4 text-lg font-bold flex items-center justify-center gap-2 ${status === "LOADING" ? "brutal-btn-loading min-w-[200px]" : ""}`}
                 >
                   {status === "LOADING" ? (
                     <Loader2 className="animate-spin" />
@@ -241,16 +241,17 @@ export default function PredictorPage() {
                     status === "SIMULATOR" ? "Reset to Baseline" : "Run Prediction"
                   )}
                   {status === "IDLE" || status === "SHOW_RESULT" ? (
-                    <ArrowRight className="w-5 h-5" />
+                    <ArrowRight className="w-5 h-5 arrow-icon" />
                   ) : null}
                 </button>
                 {(status === "SHOW_RESULT" || status === "SIMULATOR") && (
                   <button
                     type="button"
                     onClick={() => setStatus("SIMULATOR")}
-                    className={`py-4 px-6 text-lg font-bold flex items-center justify-center border-2 border-dashed transition-colors ${status === "SIMULATOR" ? "bg-ink text-paper border-ink" : "border-ink hover:bg-frame"}`}
+                    className={`flex-1 brutal-btn py-4 text-lg font-bold flex items-center justify-center gap-2 ${status === "SIMULATOR" ? "bg-ink text-paper" : "bg-paper"} border-2 border-ink`}
                   >
                     What-If Simulator
+                    <ArrowRight className="w-5 h-5 arrow-icon" />
                   </button>
                 )}
               </div>
@@ -361,9 +362,9 @@ export default function PredictorPage() {
                     <div className="mt-auto pt-6 border-t-2 border-ink">
                       <button
                         onClick={handleAddPlan}
-                        className="w-full brutal-btn py-3 text-sm font-bold flex items-center justify-center gap-2 bg-ink text-paper"
+                        className="w-full brutal-btn brutal-btn-primary py-3 text-sm font-bold flex items-center justify-center gap-2 bg-ink text-paper"
                       >
-                        Add to my weekly plan <ArrowRight className="w-4 h-4" />
+                        Add to my weekly plan <ArrowRight className="w-4 h-4 arrow-icon" />
                       </button>
                     </div>
                   </div>

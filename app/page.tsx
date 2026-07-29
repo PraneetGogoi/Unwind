@@ -31,7 +31,7 @@ export default function LandingPage() {
             <div className="mt-12 flex flex-wrap gap-4">
               <Link
                 href="/dashboard"
-                className="brutal-btn inline-block px-8 py-4 font-bold text-lg"
+                className="brutal-btn brutal-btn-primary inline-block px-8 py-4 font-bold text-lg"
               >
                 Explore Dashboard
               </Link>

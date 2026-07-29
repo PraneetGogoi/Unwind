@@ -89,9 +89,9 @@ export default function BreathePage() {
             </p>
             <Link
               href="/tips"
-              className="brutal-btn inline-flex items-center gap-2 px-8 py-4 font-bold text-lg"
+              className="brutal-btn brutal-btn-primary inline-flex items-center gap-2 px-8 py-4 font-bold text-lg"
             >
-              Explore Recovery Tips <ArrowRight className="w-5 h-5" />
+              Explore Recovery Tips <ArrowRight className="w-5 h-5 arrow-icon" />
             </Link>
           </div>
         ) : (

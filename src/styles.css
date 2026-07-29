@@ -28,6 +28,11 @@
     --theme-dots-bg: #f8fafc;
     --theme-grey-text: #475569;
 
+    --press-duration-down: 80ms;
+    --press-duration-up: 140ms;
+    --press-easing: cubic-bezier(0.2, 0.9, 0.3, 1);
+    --btn-offset: 4px;
+
     --low: #10b981;    /* Emerald green */
     --medium: #f59e0b; /* Amber */
     --high: #ef4444;   /* Red */
@@ -89,36 +94,109 @@
   }
 
   .brutal-btn {
+    position: relative;
     border: 2px solid var(--color-ink);
-    box-shadow: var(--shadow-hard);
     background-color: var(--color-frame);
     transition:
-      transform 150ms ease,
-      box-shadow 150ms ease;
+      transform var(--press-duration-up) var(--press-easing),
+      background-color var(--press-duration-up) var(--press-easing),
+      border-color var(--press-duration-up) var(--press-easing),
+      color var(--press-duration-up) var(--press-easing);
+    z-index: 1;
   }
+  .brutal-btn::after {
+    content: "";
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    border: inherit;
+    background-color: var(--color-ink);
+    z-index: -1;
+    transform: translate(var(--btn-offset), var(--btn-offset));
+    transition: transform var(--press-duration-up) var(--press-easing);
+    pointer-events: none;
+  }
+  .brutal-btn:focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 4px;
+  }
+  
+  .brutal-btn .arrow-icon {
+    transition: transform var(--press-duration-up) var(--press-easing);
+  }
+
   @media (prefers-reduced-motion: no-preference) {
     .brutal-btn:hover {
-      transform: translate(2px, 2px);
-      box-shadow: var(--shadow-hard-hover);
+      transform: translate(calc(var(--btn-offset) / 2), calc(var(--btn-offset) / 2));
+      transition-duration: var(--press-duration-down);
     }
-    .brutal-btn:active {
-      transform: translate(4px, 4px);
-      box-shadow: var(--shadow-none);
+    .brutal-btn:hover::after {
+      transform: translate(calc(var(--btn-offset) / 2), calc(var(--btn-offset) / 2));
+      transition-duration: var(--press-duration-down);
+    }
+    .brutal-btn:hover .arrow-icon {
+      transform: translateX(4px);
+      transition-duration: var(--press-duration-down);
+    }
+    .brutal-btn:active,
+    .brutal-btn-loading {
+      transform: translate(var(--btn-offset), var(--btn-offset));
+      transition-duration: var(--press-duration-down);
+    }
+    .brutal-btn:active::after,
+    .brutal-btn-loading::after {
+      transform: translate(0px, 0px);
+      transition-duration: var(--press-duration-down);
     }
   }
 
+  .brutal-btn-primary {
+    background-image: linear-gradient(
+      to right,
+      var(--color-ink) 50%,
+      var(--color-frame) 50%
+    );
+    background-size: 200% 100%;
+    background-position: 100% 0;
+  }
+  .brutal-btn-primary:hover {
+    background-position: 0 0;
+    color: var(--color-paper);
+    transition-duration: var(--press-duration-down);
+  }
+  .brutal-btn-primary:hover .arrow-icon {
+    color: var(--color-paper);
+  }
+
   .brutal-card {
+    position: relative;
     border: 2px solid var(--color-ink);
-    box-shadow: var(--shadow-hard);
     background-color: var(--color-paper);
-    transition:
-      box-shadow 150ms ease,
-      transform 150ms ease;
+    transition: transform var(--press-duration-up) var(--press-easing);
+    z-index: 1;
+  }
+  .brutal-card::after {
+    content: "";
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    border: inherit;
+    background-color: var(--color-ink);
+    z-index: -1;
+    transform: translate(var(--btn-offset), var(--btn-offset));
+    transition: transform var(--press-duration-up) var(--press-easing);
+    pointer-events: none;
   }
   @media (prefers-reduced-motion: no-preference) {
     .brutal-card:hover {
       transform: translate(-1px, -1px);
-      box-shadow: 6px 6px 0px var(--color-ink);
+    }
+    .brutal-card:hover::after {
+      transform: translate(calc(var(--btn-offset) + 2px), calc(var(--btn-offset) + 2px));
     }
   }
 
