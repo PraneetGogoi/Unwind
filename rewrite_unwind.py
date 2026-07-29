@@ -1,3 +1,6 @@
+import os
+
+content = """\
 "use client";
 
 import { useState, useEffect } from "react";
@@ -109,7 +112,7 @@ export default function MyUnwindPage() {
   };
 
   return (
-    <div className="flex-1 bg-dots-bg text-ink selection:bg-ink selection:text-paper">
+    <div className="flex-1 bg-paper text-ink selection:bg-ink selection:text-paper">
       <main className="max-w-5xl mx-auto px-4 py-10">
         <header className="mb-12">
           <h1 className="font-display text-4xl sm:text-5xl mb-4">My Unwind</h1>
@@ -331,3 +334,8 @@ export default function MyUnwindPage() {
     </div>
   );
 }
+"""
+
+with open("/Users/praneetgogoi/Downloads/Unwind-main/app/my-unwind/page.tsx", "w") as f:
+    f.write(content)
+
