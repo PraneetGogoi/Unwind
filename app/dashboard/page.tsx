@@ -79,7 +79,7 @@ function getFeatureChart(fontColor: string) {
           borderwidth: 1,
           borderpad: 4
         }
-      ]
+      ] as any
     },
   };
 }
