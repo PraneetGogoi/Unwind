@@ -2,90 +2,48 @@
 
 > Turning burnout signals into actionable insights with data, ML, and guided breathing.
 
-<img width="1710" height="986" alt="Screenshot 2026-04-18 at 9 43 45 AM" src="https://github.com/user-attachments/assets/d0765af0-1d28-4fa0-8194-2db20f92ea9d" />
+Unwind is an intelligent wellness platform designed for developers and knowledge workers. It analyzes behavioral and work-related signals (like sleep, caffeine intake, commits, and meetings) to predict burnout risk, explain *why* that risk exists, and help users recover through personalized habits and guided breathwork.
 
 ---
 
-## 🚀 Overview
+## 🚀 The Core Product Loop
 
-**Unwind** is an intelligent wellness platform designed for developers and knowledge workers. It analyzes behavioral and work-related signals (like sleep, caffeine intake, commits, and meetings) to **predict burnout risk** and help users recover through **guided breathing techniques**.
+Unwind isn't just a dashboard—it's a complete diagnostic and recovery cycle built for developers:
 
-The platform combines:
-
-- 📊 Data visualization
-- 🤖 Machine Learning models
-- 🧠 Behavioral insights
-- 🌬️ Guided breathing exercises (4-7-8 technique)
-
-<img width="1710" height="989" alt="Screenshot 2026-04-18 at 9 45 29 AM" src="https://github.com/user-attachments/assets/fc18c8e9-0016-47c1-98d6-cbd1d89cd0d8" />
+1. **Predict:** Input your weekly averages (sleep, screen time, meetings) into the ML model.
+2. **Analyze (Dashboard):** Visualize your data against a 7,000-developer dataset. See exactly which habits are driving your stress via SHAP explanations.
+3. **Plan (Tips):** Select targeted micro-habits tailored to your specific top risk drivers.
+4. **Reset (Breathe):** Interrupt stress loops instantly with our built-in 4-7-8 breathing module, powered by buttery-smooth `framer-motion` state machines.
+5. **Track (My Unwind):** A personalized hub to log daily check-ins, maintain habit streaks, and watch your risk trend downwards over time.
 
 ---
 
-## ✨ Features
+## 🏗️ Architecture & Tech Stack
 
-### 📊 Live Dashboard
+This project is built with a decoupled architecture, optimizing for a snappy frontend and an ML-capable backend.
 
-- Interactive data visualizations using Plotly
-- Insights into workload, habits, and trends
-- Correlation and pattern analysis
+### **Frontend**
+- **Framework:** Next.js (App Router) + React
+- **Styling & UI:** Tailwind CSS v4, custom brutalist design system (Navy/Cream), Radix UI primitives.
+- **Animations:** Framer Motion for complex, physics-based interactions (like the Breathe orb).
+- **Visualization:** Plotly.js (lazy-loaded via `next/dynamic` for performance) for rich interactive charts.
+- **State & Privacy:** 100% local. All user history, habits, and preferences are stored in `localStorage`. Your data never leaves your device.
 
-### 🤖 Burnout Predictor
-
-- ML-based risk prediction
-- Uses weighted feature importance
-- Helps identify early burnout signals
-
-### 🌬️ 4-7-8 Breathing Tool
-
-- Scientifically backed breathing exercise
-- Helps reduce stress and anxiety
-- Minimal UI for focused relaxation
-
-### 📈 Insights Engine
-
-- Converts raw data into meaningful recommendations
-- Tracks developer wellness over time
+### **Backend & Machine Learning**
+- **API:** Python with **FastAPI** for high-performance, async endpoint handling.
+- **Model:** Gradient Boosting Classifier trained on a dataset of over 7,000 developers. 
+- **Explainability:** Integrated **SHAP (SHapley Additive exPlanations)**. Instead of a black-box "High Risk" result, the backend calculates the marginal contribution of each input (e.g., "High screen time increased your risk by 33%").
+- **Observability:** Structured JSON logging and error tracking integrated directly into the FastAPI endpoints for production readiness.
 
 ---
 
-## 🧠 How It Works
+## 🧠 Model Decisions & Explainability
 
-Unwind collects and processes signals such as:
+A core philosophy of Unwind is that **insight without explanation is just anxiety**. 
 
-- Sleep patterns 😴
-- Caffeine intake ☕
-- Git commits 💻
-- Meeting load 📅
+The backend doesn't just return a probability score. It uses the pre-computed `explainer.pkl` to run SHAP analysis in real-time on every prediction. This allows the frontend to confidently say: *"You are at High Risk, and it is primarily driven by your caffeine-to-sleep ratio and your high meeting load."*
 
-These are fed into ML models to:
-
-1. Analyze patterns
-2. Predict burnout probability
-3. Suggest recovery actions
-
----
-
-## 🛠️ Tech Stack
-
-- **Frontend:** React / Next.js (UI, animations, UX)
-- **Backend:** Node.js / Python (API & ML integration)
-- **ML Models:** Scikit-learn / TensorFlow
-- **Visualization:** Plotly
-- **Styling:** Tailwind CSS / Custom gradients
-
----
-
-## 📂 Project Structure
-
-```
-Unwind/
-│── frontend/        # UI and user interaction
-│── backend/         # APIs and logic
-│── models/          # ML models
-│── data/            # Datasets
-│── assets/          # Images and UI assets
-│── README.md
-```
+The Tips page then reads this SHAP output and dynamically recommends the exact micro-habits that target the highest-contributing factors.
 
 ---
 
@@ -98,67 +56,34 @@ git clone https://github.com/PraneetGogoi/Unwind.git
 cd Unwind
 ```
 
-### 2️⃣ Install dependencies
+### 2️⃣ Start the Next.js Frontend
 
 ```bash
 npm install
-```
-
-### 3️⃣ Run the development server
-
-```bash
 npm run dev
 ```
+*The frontend will run on `http://localhost:3000`.*
 
-### 4️⃣ Backend (if separate)
+### 3️⃣ Start the Python FastAPI Backend
+
+In a new terminal tab, navigate to the API directory and start the Python server:
 
 ```bash
-cd backend
+cd api
+python3 -m venv venv
+source venv/bin/activate  # On Windows use `venv\Scripts\activate`
 pip install -r requirements.txt
-python app.py
+uvicorn index:app --reload --port 8000
 ```
+*The backend will run on `http://localhost:8000`.*
 
 ---
 
-## 📸 Screenshots
+## 🎨 Design Decisions
 
-### 🌑 Landing UI
-
-![Landing](./assets/landing.png)
-
-### 📊 Dashboard
-
-![Dashboard](./assets/dashboard.png)
-
-### 🌬️ Breathing Tool
-
-![Breathing](./assets/breathing.png)
-
----
-
-## 📊 Stats
-
-- 👨‍💻 7,000+ developers analyzed
-- ⚠️ 12 burnout signals tracked
-- 🤖 4 ML models compared
-
----
-
-## 🎯 Use Cases
-
-- Developers experiencing burnout
-- Students managing workload stress
-- Remote workers tracking productivity & wellness
-- Teams monitoring collective health trends
-
----
-
-## 🔮 Future Improvements
-
-- 🔗 GitHub & calendar API integration
-- 📱 Mobile app version
-- 🧠 Advanced deep learning models
-- 🧑‍🤝‍🧑 Team-based analytics dashboard
+- **Aesthetic:** A deliberate departure from typical "medical" or "wellness" apps. Unwind uses a high-contrast, brutalist design (sharp borders, strong typography, visible structure) that appeals to developers.
+- **Dark Mode:** Fully responsive, semantic dark mode built into the custom Tailwind configuration.
+- **Accessibility:** High-contrast `ink` and `paper` variables, reduced-motion fallbacks for the breathing animation, and fully keyboard-navigable components (Command Palette `Cmd+K`).
 
 ---
 
