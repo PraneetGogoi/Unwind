@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { ArrowRight, Volume2, VolumeX } from "lucide-react";
+import { motion } from "framer-motion";
 
 type PatternType = "4-7-8" | "box" | "sigh";
 type Phase = "IDLE" | "INHALE" | "HOLD" | "EXHALE" | "HOLD_EMPTY" | "DONE";
@@ -156,22 +157,21 @@ export default function BreathePage() {
   const isDone = phaseIndex === -2;
   const activePhaseName = currentPhaseDef?.phase || "IDLE";
 
-  const getOrbScale = () => {
-    if (prefersReducedMotion) return "scale-100 opacity-20";
-    if (isIdle || isDone || activePhaseName === "HOLD_EMPTY") return "scale-50";
-    if (activePhaseName === "INHALE") {
-      return `scale-100 transition-transform ease-out opacity-60`;
-    }
-    if (activePhaseName === "HOLD") return "scale-100 opacity-60";
-    if (activePhaseName === "EXHALE") {
-      return `scale-50 transition-transform ease-in-out opacity-40`;
-    }
-    return "scale-50";
+  const getOrbState = () => {
+    if (prefersReducedMotion) return { scale: 1, opacity: 0.2 };
+    if (isIdle || isDone || activePhaseName === "HOLD_EMPTY") return { scale: 0.5, opacity: 0.2 };
+    if (activePhaseName === "INHALE") return { scale: 1, opacity: 0.6 };
+    if (activePhaseName === "HOLD") return { scale: 1, opacity: 0.6 };
+    if (activePhaseName === "EXHALE") return { scale: 0.5, opacity: 0.4 };
+    return { scale: 0.5, opacity: 0.2 };
   };
   
-  const getOrbTransitionDuration = () => {
-    if (prefersReducedMotion) return "0ms";
-    return currentPhaseDef ? `${currentPhaseDef.duration * 1000}ms` : "0ms";
+  const getOrbTransition = () => {
+    if (prefersReducedMotion || !currentPhaseDef) return { duration: 0 };
+    return {
+      duration: currentPhaseDef.duration,
+      ease: activePhaseName === "INHALE" ? "easeOut" : activePhaseName === "EXHALE" ? "easeInOut" : "linear"
+    };
   };
 
   const getPhaseLabel = () => {
@@ -208,10 +208,10 @@ export default function BreathePage() {
               Feeling steadier? You just completed {pattern.name}.
             </p>
             <Link
-              href="/tips"
+              href="/my-unwind"
               className="brutal-btn brutal-btn-primary inline-flex items-center gap-2 px-8 py-4 font-bold text-lg"
             >
-              Explore Recovery Tips <ArrowRight className="w-5 h-5 arrow-icon" />
+              Log Session in My Unwind <ArrowRight className="w-5 h-5 arrow-icon" />
             </Link>
           </div>
         ) : (
@@ -250,9 +250,11 @@ export default function BreathePage() {
             >
               {/* The animating background orb */}
               {!prefersReducedMotion ? (
-                 <div
-                   className={`absolute inset-0 bg-ink rounded-full ${getOrbScale()}`}
-                   style={{ transformOrigin: "center", transitionDuration: getOrbTransitionDuration() }}
+                 <motion.div
+                   className="absolute inset-0 bg-ink rounded-full"
+                   style={{ originX: 0.5, originY: 0.5 }}
+                   animate={getOrbState()}
+                   transition={getOrbTransition()}
                  />
               ) : (
                  <div className="absolute inset-0 border-[16px] border-frame rounded-full opacity-20" />

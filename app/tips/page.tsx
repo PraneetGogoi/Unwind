@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Moon, Coffee, Activity, Brain, Users, Monitor, Shield, Layout, Heart, Palmtree, ArrowRight, CheckCircle2 } from "lucide-react";
 
@@ -390,6 +391,25 @@ export default function TipsPage() {
             })}
           </div>
         </>
+      )}
+      {/* Sticky Bottom Bar */}
+      {plan.length > 0 && tab === "tips" && (
+        <div className="fixed bottom-0 left-0 right-0 p-4 z-50 animate-in slide-in-from-bottom-4 pointer-events-none">
+          <div className="max-w-2xl mx-auto brutal-card bg-paper border-2 border-ink shadow-hard p-4 md:px-6 flex flex-col md:flex-row items-center justify-between gap-4 pointer-events-auto">
+            <div>
+              <p className="font-bold text-sm">Habit selected.</p>
+              <p className="text-xs text-muted-foreground font-mono uppercase">Next step in your loop:</p>
+            </div>
+            <div className="flex gap-2 w-full md:w-auto">
+              <Link href="/breathe" className="flex-1 md:flex-none px-4 py-2 text-center text-xs font-bold font-mono uppercase border-2 border-ink bg-paper hover:bg-frame transition-colors">
+                Take a Breath
+              </Link>
+              <Link href="/my-unwind" className="flex-1 md:flex-none px-4 py-2 text-center text-xs font-bold font-mono uppercase bg-ink text-paper hover:bg-ink/80 transition-colors">
+                Track in My Unwind
+              </Link>
+            </div>
+          </div>
+        </div>
       )}
     </main>
   );

@@ -183,19 +183,12 @@ export default function PredictorPage() {
     return c.sort((a, b) => b.value - a.value).slice(0, 5);
   };
 
-  const handleAddPlan = () => {
-    const topDriver = getContributions().find((c: any) => c.type === "up");
-    let focusName = "Sleep";
-    if (topDriver) {
-      if (topDriver.key.includes("screen")) focusName = "Screen time";
-      if (topDriver.key.includes("exercise")) focusName = "Movement";
-      if (topDriver.key.includes("meetings")) focusName = "Meetings";
-      if (topDriver.key.includes("work")) focusName = "Boundaries";
-      if (topDriver.key.includes("caffeine")) focusName = "Caffeine";
-    }
-    
-    localStorage.setItem("unwind_focus", JSON.stringify({ title: focusName, color: "var(--ink)" }));
-    router.push("/my-unwind");
+  const handleGoToTips = () => {
+    router.push("/tips");
+  };
+  
+  const handleGoToDashboard = () => {
+    router.push("/dashboard");
   };
 
   return (
@@ -389,12 +382,18 @@ export default function PredictorPage() {
                       ))}
                     </div>
 
-                    <div className="mt-auto pt-6 border-t-2 border-ink">
+                    <div className="mt-auto pt-6 border-t-2 border-ink flex flex-col sm:flex-row gap-4">
                       <button
-                        onClick={handleAddPlan}
-                        className="w-full brutal-btn brutal-btn-primary py-3 text-sm font-bold flex items-center justify-center gap-2 bg-ink text-paper"
+                        onClick={handleGoToDashboard}
+                        className="flex-1 brutal-btn py-3 text-sm font-bold flex items-center justify-center gap-2 border-2 border-ink bg-paper hover:bg-frame transition-colors"
                       >
-                        Add to my weekly plan <ArrowRight className="w-4 h-4 arrow-icon" />
+                        See deeper insights
+                      </button>
+                      <button
+                        onClick={handleGoToTips}
+                        className="flex-1 brutal-btn py-3 text-sm font-bold flex items-center justify-center gap-2 bg-ink text-paper hover:bg-ink/90 transition-colors"
+                      >
+                        Build your plan <ArrowRight className="w-4 h-4" />
                       </button>
                     </div>
                   </div>

@@ -13,6 +13,9 @@
   --color-frame: var(--theme-frame);
   --color-dots-bg: var(--theme-dots-bg);
   --color-grey-text: var(--theme-grey-text);
+  
+  --color-muted: var(--theme-frame);
+  --color-muted-foreground: var(--theme-grey-text);
 
   --shadow-hard: 4px 4px 0px var(--theme-ink);
   --shadow-hard-sm: 2px 2px 0px var(--theme-ink);
