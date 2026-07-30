@@ -25,7 +25,6 @@ export default function PredictorPage() {
     meetings_per_day: 3,
     screen_time: 10,
     exercise_hours: 1,
-    stress_level: 50,
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -46,7 +45,6 @@ export default function PredictorPage() {
     meetings_per_day: { min: 0, max: 20, step: 1 },
     screen_time: { min: 0, max: 24, step: 0.5 },
     exercise_hours: { min: 0, max: 10, step: 0.5 },
-    stress_level: { min: 0, max: 100, step: 1 },
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -161,7 +159,7 @@ export default function PredictorPage() {
     const b = result.baseline_stats;
     const c = [];
     
-    const directBad = ['stress_level', 'meetings_per_day', 'bugs_per_day', 'caffeine_intake', 'screen_time', 'daily_work_hours'];
+    const directBad = ['meetings_per_day', 'bugs_per_day', 'caffeine_intake', 'screen_time', 'daily_work_hours'];
     const inverseBad = ['sleep_hours', 'exercise_hours'];
 
     for (const key of directBad) {

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { ArrowRight, Volume2, VolumeX } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, useAnimation } from "framer-motion";
 
 type PatternType = "4-7-8" | "box" | "sigh";
 type Phase = "IDLE" | "INHALE" | "HOLD" | "EXHALE" | "HOLD_EMPTY" | "DONE";
@@ -46,10 +46,10 @@ const PATTERNS: Record<PatternType, Pattern> = {
     description: "Double inhale, long exhale. Fast stress reset.",
     rounds: 3,
     phases: [
-      { phase: "INHALE", duration: 2 }, // Quick inhale
-      { phase: "HOLD", duration: 1 },   // Tiny pause
-      { phase: "INHALE", duration: 1 }, // Top off
-      { phase: "EXHALE", duration: 6 }, // Long exhale
+      { phase: "INHALE", duration: 2 }, 
+      { phase: "HOLD", duration: 1 },   
+      { phase: "INHALE", duration: 1 }, 
+      { phase: "EXHALE", duration: 6 }, 
     ],
   },
 };
@@ -58,11 +58,14 @@ export default function BreathePage() {
   const [patternId, setPatternId] = useState<PatternType>("4-7-8");
   const pattern = PATTERNS[patternId];
   
-  const [phaseIndex, setPhaseIndex] = useState(-1);
+  const [activePhaseName, setActivePhaseName] = useState<Phase>("IDLE");
   const [round, setRound] = useState(1);
   const [timeLeft, setTimeLeft] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  
+  const orbControls = useAnimation();
+  const sessionRef = useRef<{ active: boolean; timerId: NodeJS.Timeout | null }>({ active: false, timerId: null });
 
   // Audio Context Ref
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -76,7 +79,7 @@ export default function BreathePage() {
     return () => mediaQuery.removeEventListener("change", handler);
   }, []);
 
-  const playTone = useCallback(() => {
+  const playTone = useCallback((phase: Phase) => {
     if (!soundEnabled) return;
     try {
       if (!audioCtxRef.current) {
@@ -89,8 +92,16 @@ export default function BreathePage() {
       const gainNode = ctx.createGain();
       
       osc.type = "sine";
-      osc.frequency.setValueAtTime(220, ctx.currentTime); // Low A note, very gentle
-      osc.frequency.exponentialRampToValueAtTime(110, ctx.currentTime + 0.5);
+      
+      if (phase === "INHALE") {
+          osc.frequency.setValueAtTime(220, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(330, ctx.currentTime + 1.0);
+      } else if (phase === "EXHALE") {
+          osc.frequency.setValueAtTime(330, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(165, ctx.currentTime + 1.0);
+      } else {
+          osc.frequency.setValueAtTime(220, ctx.currentTime);
+      }
       
       gainNode.gain.setValueAtTime(0, ctx.currentTime);
       gainNode.gain.linearRampToValueAtTime(0.1, ctx.currentTime + 0.1);
@@ -112,67 +123,95 @@ export default function BreathePage() {
     }
   }, [soundEnabled]);
 
-  useEffect(() => {
-    if (phaseIndex === -1) return; // IDLE or DONE handled elsewhere
-    if (phaseIndex >= pattern.phases.length) {
-      // End of round
-      if (round >= pattern.rounds) {
-        setPhaseIndex(-2); // DONE state
-        // Save session
-        const sessions = parseInt(localStorage.getItem("unwind_breathe_sessions") || "0");
-        localStorage.setItem("unwind_breathe_sessions", (sessions + 1).toString());
-      } else {
-        setRound(r => r + 1);
-        setPhaseIndex(0);
-      }
-      return;
-    }
-
-    const currentPhase = pattern.phases[phaseIndex];
-    setTimeLeft(currentPhase.duration);
-    playTone();
+  const startSession = async () => {
+    sessionRef.current.active = true;
+    
+    // Quick haptic/tone to signify start
     triggerHaptic();
+    playTone("INHALE");
 
-    const timer = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          setPhaseIndex(idx => idx + 1);
-          return 0;
+    for (let r = 1; r <= pattern.rounds; r++) {
+      if (!sessionRef.current.active) break;
+      setRound(r);
+      
+      for (const p of pattern.phases) {
+        if (!sessionRef.current.active) break;
+        
+        setActivePhaseName(p.phase);
+        setTimeLeft(p.duration);
+        playTone(p.phase);
+        triggerHaptic();
+        
+        // Start animation visually
+        if (!prefersReducedMotion) {
+           let targetScale = 1;
+           let targetOpacity = 0.6;
+           let ease: "linear" | "easeOut" | "easeInOut" = "linear";
+           
+           if (p.phase === "INHALE") {
+              targetScale = 1.0; 
+              ease = "easeOut";
+           } else if (p.phase === "EXHALE") {
+              targetScale = 0.5;
+              targetOpacity = 0.4;
+              ease = "easeInOut";
+           } else if (p.phase === "HOLD") {
+              targetScale = 1.0;
+           } else {
+              targetScale = 0.5;
+              targetOpacity = 0.2;
+           }
+           
+           orbControls.start({
+             scale: targetScale,
+             opacity: targetOpacity,
+             transition: { duration: p.duration, ease }
+           });
         }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [phaseIndex, round, pattern, playTone, triggerHaptic]);
-
-  const startSession = () => {
-    setRound(1);
-    setPhaseIndex(0);
+        
+        // Countdown timer loop for the exact duration of the phase
+        await new Promise<void>((resolve) => {
+          let currentTick = p.duration;
+          
+          sessionRef.current.timerId = setInterval(() => {
+            currentTick -= 1;
+            if (currentTick <= 0) {
+              if (sessionRef.current.timerId) clearInterval(sessionRef.current.timerId);
+              setTimeLeft(0);
+              resolve();
+            } else {
+              setTimeLeft(currentTick);
+            }
+          }, 1000);
+        });
+      }
+    }
+    
+    if (sessionRef.current.active) {
+       setActivePhaseName("DONE");
+       const sessions = parseInt(localStorage.getItem("unwind_breathe_sessions") || "0");
+       localStorage.setItem("unwind_breathe_sessions", (sessions + 1).toString());
+    }
   };
 
-  const currentPhaseDef = phaseIndex >= 0 && phaseIndex < pattern.phases.length ? pattern.phases[phaseIndex] : null;
-  const isIdle = phaseIndex === -1;
-  const isDone = phaseIndex === -2;
-  const activePhaseName = currentPhaseDef?.phase || "IDLE";
-
-  const getOrbState = () => {
-    if (prefersReducedMotion) return { scale: 1, opacity: 0.2 };
-    if (isIdle || isDone || activePhaseName === "HOLD_EMPTY") return { scale: 0.5, opacity: 0.2 };
-    if (activePhaseName === "INHALE") return { scale: 1, opacity: 0.6 };
-    if (activePhaseName === "HOLD") return { scale: 1, opacity: 0.6 };
-    if (activePhaseName === "EXHALE") return { scale: 0.5, opacity: 0.4 };
-    return { scale: 0.5, opacity: 0.2 };
+  const cancelSession = () => {
+    sessionRef.current.active = false;
+    if (sessionRef.current.timerId) clearInterval(sessionRef.current.timerId);
+    setActivePhaseName("IDLE");
+    orbControls.stop();
+    orbControls.set({ scale: 0.5, opacity: 0.2 });
   };
-  
-  const getOrbTransition = () => {
-    if (prefersReducedMotion || !currentPhaseDef) return { duration: 0 };
-    return {
-      duration: currentPhaseDef.duration,
-      ease: activePhaseName === "INHALE" ? "easeOut" : activePhaseName === "EXHALE" ? "easeInOut" : "linear"
+
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
+      sessionRef.current.active = false;
+      if (sessionRef.current.timerId) clearInterval(sessionRef.current.timerId);
     };
-  };
+  }, []);
+
+  const isIdle = activePhaseName === "IDLE";
+  const isDone = activePhaseName === "DONE";
 
   const getPhaseLabel = () => {
     if (isIdle) return "Start";
@@ -183,6 +222,13 @@ export default function BreathePage() {
     if (activePhaseName === "HOLD_EMPTY") return "Hold...";
     return "";
   };
+  
+  // Set initial orb state
+  useEffect(() => {
+    if (isIdle) {
+      orbControls.set({ scale: 0.5, opacity: 0.2 });
+    }
+  }, [isIdle, orbControls]);
 
   return (
     <div className={`flex-1 bg-dots-bg text-ink selection:bg-ink selection:text-paper flex flex-col transition-colors duration-1000 ${
@@ -222,7 +268,11 @@ export default function BreathePage() {
                   {(Object.keys(PATTERNS) as PatternType[]).map(key => (
                     <button
                       key={key}
-                      onClick={() => setPatternId(key)}
+                      onClick={() => {
+                        setPatternId(key);
+                        // Reset orb animation for the new pattern
+                        orbControls.set({ scale: 0.5, opacity: 0.2 });
+                      }}
                       className={`px-4 py-2 font-bold text-sm transition-colors ${patternId === key ? 'bg-ink text-paper' : 'hover:bg-paper'}`}
                     >
                       {PATTERNS[key].name}
@@ -253,8 +303,7 @@ export default function BreathePage() {
                  <motion.div
                    className="absolute inset-0 bg-ink rounded-full"
                    style={{ originX: 0.5, originY: 0.5 }}
-                   animate={getOrbState()}
-                   transition={getOrbTransition()}
+                   animate={orbControls}
                  />
               ) : (
                  <div className="absolute inset-0 border-[16px] border-frame rounded-full opacity-20" />
@@ -271,7 +320,7 @@ export default function BreathePage() {
 
             {!isIdle && (
               <button
-                onClick={() => setPhaseIndex(-1)}
+                onClick={cancelSession}
                 className="mt-12 text-sm font-bold text-grey-text hover:text-ink underline underline-offset-4"
               >
                 Cancel session

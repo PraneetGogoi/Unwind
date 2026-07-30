@@ -18,21 +18,20 @@ const RISK_COLORS: Record<string, string> = {
 
 // Sorted ascending so the strongest predictor renders at the top of the h-bar chart.
 const FEATURE_IMPORTANCE: { feature: string; importance: number }[] = [
-  { feature: "experience_years", importance: 0.0065 },
-  { feature: "age", importance: 0.0069 },
-  { feature: "commits_per_day", importance: 0.0073 },
-  { feature: "caffeine_intake", importance: 0.0078 },
-  { feature: "exercise_hours", importance: 0.0113 },
-  { feature: "sleep_hours", importance: 0.0154 },
-  { feature: "caffeine_per_sleep", importance: 0.018 },
-  { feature: "meetings_per_day", importance: 0.0196 },
-  { feature: "productivity_ratio", importance: 0.0208 },
-  { feature: "bugs_per_day", importance: 0.0323 },
-  { feature: "screen_time", importance: 0.0332 },
-  { feature: "daily_work_hours", importance: 0.0462 },
-  { feature: "work_life_balance", importance: 0.0638 },
-  { feature: "cognitive_load", importance: 0.0956 },
-  { feature: "stress_level", importance: 0.615 },
+  { feature: "experience_years", importance: 0.0169 },
+  { feature: "age", importance: 0.0179 },
+  { feature: "commits_per_day", importance: 0.0190 },
+  { feature: "caffeine_intake", importance: 0.0203 },
+  { feature: "exercise_hours", importance: 0.0294 },
+  { feature: "sleep_hours", importance: 0.0400 },
+  { feature: "caffeine_per_sleep", importance: 0.0468 },
+  { feature: "meetings_per_day", importance: 0.0509 },
+  { feature: "productivity_ratio", importance: 0.0540 },
+  { feature: "bugs_per_day", importance: 0.0839 },
+  { feature: "screen_time", importance: 0.0862 },
+  { feature: "daily_work_hours", importance: 0.1200 },
+  { feature: "work_life_balance", importance: 0.1657 },
+  { feature: "cognitive_load", importance: 0.2483 },
 ];
 
 const prettify = (s: string) =>
@@ -90,8 +89,8 @@ export default function ModelPage() {
           {[
             { k: "Developers", v: "7,000" },
             { k: "Best model", v: "Gradient Boosting" },
-            { k: "Accuracy", v: "98.7%" },
-            { k: "ROC-AUC", v: "0.996" },
+            { k: "Accuracy", v: "85.2%" },
+            { k: "ROC-AUC", v: "0.891" },
           ].map((s) => (
             <div key={s.k} className="brutal-card bg-paper p-4">
               <div className="font-mono text-[11px] uppercase tracking-wide text-grey-text">
@@ -139,8 +138,7 @@ export default function ModelPage() {
             <section>
               <h2 className="font-display text-2xl mb-1">Feature Importance</h2>
               <p className="font-sans text-sm text-grey-text mb-4">
-                Derived from the Random Forest model. Stress level dominates — it alone accounts for ~62% of the
-                model&apos;s decisions.
+                Derived from the Random Forest model. Derived from the behavioral Random Forest model. Cognitive load and work-life balance drive the predictions.
               </p>
               <PlotlyChart
                 data={importanceData}

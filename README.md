@@ -41,7 +41,13 @@ This project is built with a decoupled architecture, optimizing for a snappy fro
 
 A core philosophy of Unwind is that **insight without explanation is just anxiety**. 
 
-The backend doesn't just return a probability score. It uses the pre-computed `explainer.pkl` to run SHAP analysis in real-time on every prediction. This allows the frontend to confidently say: *"You are at High Risk, and it is primarily driven by your caffeine-to-sleep ratio and your high meeting load."*
+### The Behavioral Pivot
+Initially, the model was trained on a dataset that included a self-reported `stress_level` feature. This achieved 92% accuracy, but SHAP analysis revealed it was a near-circular feature (accounting for >60% of the model's decisions). If a user knows they are highly stressed, they don't need an ML model to tell them they might burn out.
+
+To make the tool genuinely predictive, we dropped all self-reported subjective metrics and retrained the Gradient Boosting model exclusively on **behavioral data** (commits, sleep, caffeine, meetings). The model now detects hidden burnout risks in developers who *feel* fine but are sustaining dangerous behavioral loops.
+
+### Real-Time SHAP Integration
+The backend doesn't just return a probability score. It uses a pre-computed `explainer.pkl` to run SHAP analysis in real-time on every prediction. This allows the frontend to confidently say: *"You are at High Risk, and it is primarily driven by your caffeine-to-sleep ratio and your high meeting load."*
 
 The Tips page then reads this SHAP output and dynamically recommends the exact micro-habits that target the highest-contributing factors.
 

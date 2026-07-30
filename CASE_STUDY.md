@@ -30,7 +30,7 @@ This was a classic case of target leakage or a near-circular feature. A user pre
 ### Version 2: The Behavioral Pivot
 To make the tool genuinely predictive and actionable, I needed the model to infer risk *purely from behavior*.
 
-I dropped the `stress_level` and `work_life_balance` self-reported features from the training pipeline and retrained the XGBoost model exclusively on behavioral data (e.g., `commits_per_day`, `sleep_hours`, `caffeine_intake`, `meetings_per_day`). 
+I dropped the `stress_level` and `work_life_balance` self-reported features from the training pipeline. Instead of relying on a subjective 1-10 scale for work-life balance, I engineered hard behavioral ratios (e.g., `work_life_balance` calculated mathematically as `(sleep + exercise) / (work_hours + screen_time)` and `cognitive_load` based on bugs and meeting density). I then retrained the Gradient Boosting model exclusively on these behavioral metrics. 
 
 While the baseline accuracy dropped slightly (from 92% to 85%), the **utility of the model skyrocketed**. The application was now capable of detecting hidden burnout risk in developers who *felt* fine but were sustaining dangerous behavioral loops (like high caffeine + low sleep + high commit velocity).
 

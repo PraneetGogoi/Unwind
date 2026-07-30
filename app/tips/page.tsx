@@ -10,6 +10,9 @@ type TipCategory = {
   title: string;
   color: string;
   relatedInput?: string; // used to link to prediction factors
+  driverImpact?: number;
+  recommended?: boolean;
+  downranked?: boolean;
   payoff: string;
   tips: {
     text: string;
@@ -161,30 +164,47 @@ export default function TipsPage() {
     const savedHistory = JSON.parse(localStorage.getItem("unwind_habit_history") || "[]");
     setHistory(savedHistory);
 
+    // Compute history stats for downranking
+    const noCounts: Record<string, number> = {};
+    savedHistory.forEach((h: any) => {
+      if (h.status === "No") noCounts[h.title] = (noCounts[h.title] || 0) + 1;
+    });
+    const downrankedTitles = Object.keys(noCounts).filter(t => noCounts[t] >= 2);
+
     const latestPrediction = JSON.parse(localStorage.getItem("unwind_latest_prediction") || "null");
     if (latestPrediction && latestPrediction.inputs && latestPrediction.result) {
       setPersonalData(latestPrediction.inputs);
-      
       const topDrivers = latestPrediction.result.top_drivers || [];
-      const riskDrivingFeatures = topDrivers.filter((d: any) => d.impact > 0).map((d: any) => d.feature);
-
+      
       const mapping: Record<string, string> = {
-        sleep_hours: "Sleep",
-        caffeine_intake: "Caffeine",
-        exercise_hours: "Movement",
-        commits_per_day: "Focus",
-        meetings_per_day: "Meetings",
-        screen_time: "Screen time",
-        daily_work_hours: "Boundaries"
+        sleep_hours: "Sleep", caffeine_intake: "Caffeine", exercise_hours: "Movement",
+        commits_per_day: "Focus", meetings_per_day: "Meetings", screen_time: "Screen time", daily_work_hours: "Boundaries"
       };
 
+      const riskDrivingFeatures = topDrivers.filter((d: any) => d.impact > 0).map((d: any) => d.feature);
       const recommendations = riskDrivingFeatures.map((f: string) => mapping[f]).filter(Boolean);
 
-      if (recommendations.length > 0) {
-        const recommendedCats = CATEGORIES.filter(c => recommendations.includes(c.title));
-        const otherCats = CATEGORIES.filter(c => !recommendations.includes(c.title));
-        setCategories([...recommendedCats.map(c => ({...c, recommended: true})), ...otherCats]);
-      }
+      const processedCats = CATEGORIES.map(c => {
+         let impact: number | undefined;
+         if (c.relatedInput) {
+           const d = topDrivers.find((td: any) => td.feature === c.relatedInput);
+           if (d && d.impact > 0) impact = d.impact;
+         }
+         return {
+           ...c,
+           recommended: recommendations.includes(c.title),
+           driverImpact: impact,
+           downranked: downrankedTitles.includes(c.title)
+         };
+      });
+      
+      const recCats = processedCats.filter(c => c.recommended && !c.downranked);
+      const nCats = processedCats.filter(c => !c.recommended && !c.downranked);
+      const downCats = processedCats.filter(c => c.downranked);
+      setCategories([...recCats, ...nCats, ...downCats]);
+    } else {
+      const processedCats = CATEGORIES.map(c => ({ ...c, downranked: downrankedTitles.includes(c.title) }));
+      setCategories([...processedCats.filter(c => !c.downranked), ...processedCats.filter(c => c.downranked)]);
     }
   }, []);
 
@@ -226,7 +246,7 @@ export default function TipsPage() {
   return (
     <main className="mx-auto max-w-7xl px-4 sm:px-6 py-10 min-h-screen">
       <header className="max-w-2xl">
-        <p className="font-mono text-xs font-bold uppercase tracking-[0.25em] text-muted-foreground">
+        <p className="font-mono text-xs font-bold uppercase tracking-[0.25em] text-grey-text">
           Recovery Plan
         </p>
         <h1 className="font-display text-4xl sm:text-5xl mt-2">
@@ -240,13 +260,13 @@ export default function TipsPage() {
       <div className="mt-8 flex border-b-2 border-ink">
         <button 
           onClick={() => setTab("tips")}
-          className={`px-6 py-3 font-bold uppercase tracking-wider text-sm transition-colors border-t-2 border-l-2 border-r-2 ${tab === "tips" ? "bg-ink text-paper border-ink" : "bg-transparent border-transparent text-muted-foreground hover:text-ink"}`}
+          className={`px-6 py-3 font-bold uppercase tracking-wider text-sm transition-colors border-t-2 border-l-2 border-r-2 ${tab === "tips" ? "bg-ink text-paper border-ink" : "bg-transparent border-transparent text-grey-text hover:text-ink"}`}
         >
           Explore Tips
         </button>
         <button 
           onClick={() => setTab("history")}
-          className={`px-6 py-3 font-bold uppercase tracking-wider text-sm transition-colors border-t-2 border-l-2 border-r-2 ${tab === "history" ? "bg-ink text-paper border-ink" : "bg-transparent border-transparent text-muted-foreground hover:text-ink"}`}
+          className={`px-6 py-3 font-bold uppercase tracking-wider text-sm transition-colors border-t-2 border-l-2 border-r-2 ${tab === "history" ? "bg-ink text-paper border-ink" : "bg-transparent border-transparent text-grey-text hover:text-ink"}`}
         >
           Habit History
         </button>
@@ -257,24 +277,42 @@ export default function TipsPage() {
           {history.length === 0 ? (
             <div className="text-center py-12 border-2 border-dashed border-ink flex flex-col items-center">
               <p className="font-bold mb-2">No history yet.</p>
-              <p className="text-sm text-muted-foreground">When you complete and reflect on a habit, it appears here.</p>
+              <p className="text-sm text-grey-text">When you complete and reflect on a habit, it appears here.</p>
             </div>
           ) : (
             <div className="space-y-4">
-              {history.map((h, i) => (
-                <div key={i} className="brutal-card bg-frame border-2 border-ink shadow-hard-sm p-4 flex items-center justify-between">
-                  <div>
-                    <h3 className="font-display text-xl mb-1">{h.title}</h3>
-                    <p className="font-mono text-xs text-muted-foreground uppercase">{new Date(h.date).toLocaleDateString()}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-sm uppercase">Did it help?</span>
-                    <span className={`px-3 py-1 font-bold text-xs uppercase border-2 border-ink ${h.status === 'Yes' ? 'bg-low text-ink' : h.status === 'No' ? 'bg-high text-paper' : 'bg-paper text-ink'}`}>
-                      {h.status}
-                    </span>
-                  </div>
-                </div>
-              ))}
+              {(() => {
+                const grouped = history.reduce((acc: any, h: any) => {
+                  if (!acc[h.title]) acc[h.title] = { total: 0, yes: 0, kinda: 0, no: 0, lastDate: null };
+                  acc[h.title].total++;
+                  if (h.status === "Yes") acc[h.title].yes++;
+                  if (h.status === "Kinda") acc[h.title].kinda++;
+                  if (h.status === "No") acc[h.title].no++;
+                  if (!acc[h.title].lastDate || new Date(h.date) > new Date(acc[h.title].lastDate)) {
+                    acc[h.title].lastDate = h.date;
+                  }
+                  return acc;
+                }, {});
+                return Object.entries(grouped).map(([title, stats]: [string, any]) => {
+                  const pattern = stats.yes > stats.no ? "Mostly helpful" : stats.no >= 2 ? "Rarely helpful" : "Mixed results";
+                  return (
+                    <div key={title} className="brutal-card bg-frame border-2 border-ink shadow-hard-sm p-4 flex items-center justify-between">
+                      <div>
+                        <h3 className="font-display text-xl mb-1">{title}</h3>
+                        <p className="font-mono text-xs text-grey-text uppercase">
+                          Last completed: {new Date(stats.lastDate).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div className="flex flex-col items-end gap-1 text-right">
+                        <span className="font-bold text-sm uppercase">Completed {stats.total} {stats.total === 1 ? 'time' : 'times'}</span>
+                        <span className={`px-2 py-0.5 font-bold text-[10px] uppercase border-2 border-ink ${stats.yes > stats.no ? 'bg-low text-ink' : stats.no >= 2 ? 'bg-high text-paper' : 'bg-paper text-ink'}`}>
+                          Pattern: {pattern}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
             </div>
           )}
         </div>
@@ -283,7 +321,7 @@ export default function TipsPage() {
       {tab === "tips" && (
         <>
           <div className="mt-8 flex flex-wrap gap-2 items-center">
-            <span className="font-mono text-sm font-bold text-muted-foreground mr-2">Filter by effort:</span>
+            <span className="font-mono text-sm font-bold text-grey-text mr-2">Filter by effort:</span>
             {["all", "2-minute", "this week", "ongoing"].map(effort => (
               <button
                 key={effort}
@@ -360,13 +398,13 @@ export default function TipsPage() {
                                 <span className="font-bold cursor-pointer hover:underline" onClick={() => toggleTip(tipId)}>
                                   {t.text}
                                 </span>
-                                <span className="ml-2 font-mono text-[10px] uppercase text-muted-foreground border-b border-muted-foreground">
+                                <span className="ml-2 font-mono text-[10px] uppercase text-grey-text border-b border-muted-foreground">
                                   {t.effort}
                                 </span>
                               </div>
                             </div>
                             {isExpanded && (
-                              <div className="ml-7 mt-1 text-xs text-muted-foreground bg-frame p-2 border-l-2 border-ink">
+                              <div className="ml-7 mt-1 text-xs text-grey-text bg-frame p-2 border-l-2 border-ink">
                                 <strong>Why it works:</strong> {t.why}
                               </div>
                             )}
@@ -398,7 +436,7 @@ export default function TipsPage() {
           <div className="max-w-2xl mx-auto brutal-card bg-paper border-2 border-ink shadow-hard p-4 md:px-6 flex flex-col md:flex-row items-center justify-between gap-4 pointer-events-auto">
             <div>
               <p className="font-bold text-sm">Habit selected.</p>
-              <p className="text-xs text-muted-foreground font-mono uppercase">Next step in your loop:</p>
+              <p className="text-xs text-grey-text font-mono uppercase">Next step in your loop:</p>
             </div>
             <div className="flex gap-2 w-full md:w-auto">
               <Link href="/breathe" className="flex-1 md:flex-none px-4 py-2 text-center text-xs font-bold font-mono uppercase border-2 border-ink bg-paper hover:bg-frame transition-colors">

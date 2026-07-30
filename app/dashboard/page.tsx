@@ -15,21 +15,20 @@ const PlotlyChart = dynamic(
 
 // Sorted ascending so the strongest predictor renders at the top of the h-bar chart.
 const FEATURE_IMPORTANCE: { feature: string; importance: number }[] = [
-  { feature: "experience_years", importance: 0.0065 },
-  { feature: "age", importance: 0.0069 },
-  { feature: "commits_per_day", importance: 0.0073 },
-  { feature: "caffeine_intake", importance: 0.0078 },
-  { feature: "exercise_hours", importance: 0.0113 },
-  { feature: "sleep_hours", importance: 0.0154 },
-  { feature: "caffeine_per_sleep", importance: 0.018 },
-  { feature: "meetings_per_day", importance: 0.0196 },
-  { feature: "productivity_ratio", importance: 0.0208 },
-  { feature: "bugs_per_day", importance: 0.0323 },
-  { feature: "screen_time", importance: 0.0332 },
-  { feature: "daily_work_hours", importance: 0.0462 },
-  { feature: "work_life_balance", importance: 0.0638 },
-  { feature: "cognitive_load", importance: 0.0956 },
-  { feature: "stress_level", importance: 0.615 },
+  { feature: "experience_years", importance: 0.0169 },
+  { feature: "age", importance: 0.0179 },
+  { feature: "commits_per_day", importance: 0.0190 },
+  { feature: "caffeine_intake", importance: 0.0203 },
+  { feature: "exercise_hours", importance: 0.0294 },
+  { feature: "sleep_hours", importance: 0.0400 },
+  { feature: "caffeine_per_sleep", importance: 0.0468 },
+  { feature: "meetings_per_day", importance: 0.0509 },
+  { feature: "productivity_ratio", importance: 0.0540 },
+  { feature: "bugs_per_day", importance: 0.0839 },
+  { feature: "screen_time", importance: 0.0862 },
+  { feature: "daily_work_hours", importance: 0.1200 },
+  { feature: "work_life_balance", importance: 0.1657 },
+  { feature: "cognitive_load", importance: 0.2483 },
 ];
 
 const prettify = (s: string) =>
@@ -47,9 +46,7 @@ function getFeatureChart(fontColor: string) {
         orientation: "h",
         marker: {
           color: FEATURE_IMPORTANCE.map((f) =>
-            f.feature === "stress_level"
-              ? "#f87171"
-              : f.importance > 0.04
+            f.importance > 0.10
               ? "#fbbf24"
               : "#94a3b8"
           ),
@@ -159,7 +156,7 @@ export default function DashboardPage() {
             </div>
             <h1 className="font-display text-4xl md:text-5xl leading-tight mb-6">
               Your overall risk is <span className={prediction === "High" ? "text-high" : prediction === "Medium" ? "text-medium" : "text-low"}>{prediction}</span>. 
-              Your stress level is {getStressPercentile(userMetrics.stress_level)} the population.
+              Your cognitive load is {getStressPercentile(userMetrics.cognitive_load)} the population.
             </h1>
             
             {topDrivers.length > 0 && (

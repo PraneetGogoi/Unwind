@@ -3,45 +3,48 @@
     "High": {
       "stress_level": 82.74706509539843,
       "sleep_hours": 6.0931313131313125,
-      "daily_work_hours": 11.125022446689114
+      "daily_work_hours": 11.125022446689114,
+      "cognitive_load": 46.060207631874306
     },
     "Low": {
       "stress_level": 22.76920903954802,
       "sleep_hours": 6.972128060263653,
-      "daily_work_hours": 6.741707470182047
+      "daily_work_hours": 6.741707470182047,
+      "cognitive_load": 23.117099811676084
     },
     "Medium": {
       "stress_level": 52.927740689655174,
       "sleep_hours": 6.463812413793104,
-      "daily_work_hours": 8.947908965517241
+      "daily_work_hours": 8.947908965517241,
+      "cognitive_load": 34.35480551724138
     }
   },
   "box_plots": {
     "Low": {
-      "stress_level": {
-        "min": 0.0,
-        "q1": 16.12,
-        "median": 24.41,
-        "q3": 30.57,
-        "max": 53.795
+      "cognitive_load": {
+        "min": 5.13,
+        "q1": 16.31,
+        "median": 22.05,
+        "q3": 28.93,
+        "max": 51.49
       }
     },
     "Medium": {
-      "stress_level": {
-        "min": 4.71,
-        "q1": 44.89,
-        "median": 53.25,
-        "q3": 60.92,
-        "max": 100.0
+      "cognitive_load": {
+        "min": 8.14,
+        "q1": 26.61,
+        "median": 34.36,
+        "q3": 42.11,
+        "max": 61.59
       }
     },
     "High": {
-      "stress_level": {
-        "min": 53.795,
-        "q1": 75.09,
-        "median": 81.22,
-        "q3": 89.9475,
-        "max": 100.0
+      "cognitive_load": {
+        "min": 14.66,
+        "q1": 39.8775,
+        "median": 47.325,
+        "q3": 53.019999999999996,
+        "max": 64.89
       }
     }
   },
@@ -73,21 +76,24 @@
       "sleep_hours": 0.4186262626262626,
       "meetings_per_day": 0.6369248035914703,
       "stress_level": 0.8274706509539843,
-      "bugs_per_day": 0.6930710614921141
+      "bugs_per_day": 0.6930710614921141,
+      "cognitive_load": 0.6849097662629569
     },
     "Low": {
       "daily_work_hours": 0.27417074701820465,
       "sleep_hours": 0.5944256120527307,
       "meetings_per_day": 0.35181697705238196,
       "stress_level": 0.22769209039548025,
-      "bugs_per_day": 0.3059437671391284
+      "bugs_per_day": 0.3059437671391284,
+      "cognitive_load": 0.3009889526719559
     },
     "Medium": {
       "daily_work_hours": 0.49479089655172415,
       "sleep_hours": 0.49276248275862067,
       "meetings_per_day": 0.5094252873563219,
       "stress_level": 0.5292774068965517,
-      "bugs_per_day": 0.48762250453720507
+      "bugs_per_day": 0.48762250453720507,
+      "cognitive_load": 0.48903623690162956
     }
   },
   "correlation": {

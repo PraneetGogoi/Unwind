@@ -12,8 +12,8 @@ const BURNOUT_ORDER = ["Low", "Medium", "High"];
 
 // 1. Signal Averages (Bar chart)
 export function getSignalAveragesChart(userMetrics?: any) {
-  const features = ["stress_level", "sleep_hours", "daily_work_hours"];
-  const featureNames = ["Stress", "Sleep", "Work Hours"];
+  const features = ["cognitive_load", "sleep_hours", "daily_work_hours"];
+  const featureNames = ["Cognitive Load", "Sleep", "Work Hours"];
   
   const data: any[] = BURNOUT_ORDER.map(level => {
     return {
@@ -28,7 +28,7 @@ export function getSignalAveragesChart(userMetrics?: any) {
   if (userMetrics) {
     data.push({
       x: featureNames,
-      y: [userMetrics.stress_level, userMetrics.sleep_hours, userMetrics.daily_work_hours],
+      y: [userMetrics.cognitive_load, userMetrics.sleep_hours, userMetrics.daily_work_hours],
       name: "You",
       type: "scatter",
       mode: "markers",
@@ -48,7 +48,7 @@ export function getSignalAveragesChart(userMetrics?: any) {
 // 2. Box Plots (Spread of Cognitive Load)
 export function getBoxPlotChart(userMetrics?: any) {
   const data: any[] = BURNOUT_ORDER.map(level => {
-    const stats = (chartData.box_plots as any)[level].stress_level;
+    const stats = (chartData.box_plots as any)[level].cognitive_load;
     return {
       type: "box",
       name: level,
@@ -64,7 +64,7 @@ export function getBoxPlotChart(userMetrics?: any) {
   if (userMetrics) {
     data.push({
       x: ["You"],
-      y: [userMetrics.stress_level],
+      y: [userMetrics.cognitive_load],
       name: "You",
       type: "scatter",
       mode: "markers",
@@ -75,7 +75,7 @@ export function getBoxPlotChart(userMetrics?: any) {
   return {
     data,
     layout: {
-      title: { text: "Stress Level Distribution" }
+      title: { text: "Cognitive Load Distribution" }
     }
   };
 }
@@ -105,8 +105,8 @@ export function getSegmentChart() {
 
 // 4. Radar Profile
 export function getRadarChart() {
-  const features = ["daily_work_hours", "sleep_hours", "meetings_per_day", "stress_level", "bugs_per_day"];
-  const displayNames = ["Work Hrs", "Sleep", "Meetings", "Stress", "Bugs"];
+  const features = ["daily_work_hours", "sleep_hours", "meetings_per_day", "cognitive_load", "bugs_per_day"];
+  const displayNames = ["Work Hrs", "Sleep", "Meetings", "Load", "Bugs"];
   
   const data: any[] = BURNOUT_ORDER.map(level => {
     const r = features.map(f => (chartData.radar as any)[level][f]);
