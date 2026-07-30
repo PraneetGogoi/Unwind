@@ -213,27 +213,35 @@ export default function MyUnwindPage() {
               ) : (
                 <div className="space-y-6">
                   <div>
-                    <label className="block text-sm font-bold mb-2 uppercase tracking-wider">Energy Level</label>
+                    <label className="block text-sm font-bold mb-2 uppercase tracking-wider">Energy Level: {checkInState.energy}/5</label>
                     <input 
-                      type="range" min="1" max="5" 
+                      type="range" min="1" max="5" step="1"
                       value={checkInState.energy}
                       onChange={e => setCheckInState({...checkInState, energy: parseInt(e.target.value)})}
-                      className="w-full"
+                      className="w-full brutal-slider"
+                      style={{ "--slider-fill": `${((checkInState.energy - 1) / 4) * 100}%` } as React.CSSProperties}
                     />
-                    <div className="flex justify-between text-xs font-mono font-bold mt-1 text-muted-foreground">
+                    <div className="flex justify-between text-xs font-mono font-bold mt-2 text-muted-foreground relative px-1">
+                      <div className="absolute top-[-8px] left-0 right-0 flex justify-between px-[10px]">
+                         {[1,2,3,4,5].map(i => <div key={i} className="w-[2px] h-[6px] bg-ink opacity-20"></div>)}
+                      </div>
                       <span>Low</span>
                       <span>High</span>
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-bold mb-2 uppercase tracking-wider">Mood</label>
+                    <label className="block text-sm font-bold mb-2 uppercase tracking-wider">Mood: {checkInState.mood}/5</label>
                     <input 
-                      type="range" min="1" max="5" 
+                      type="range" min="1" max="5" step="1"
                       value={checkInState.mood}
                       onChange={e => setCheckInState({...checkInState, mood: parseInt(e.target.value)})}
-                      className="w-full"
+                      className="w-full brutal-slider"
+                      style={{ "--slider-fill": `${((checkInState.mood - 1) / 4) * 100}%` } as React.CSSProperties}
                     />
-                    <div className="flex justify-between text-xs font-mono font-bold mt-1 text-muted-foreground">
+                    <div className="flex justify-between text-xs font-mono font-bold mt-2 text-muted-foreground relative px-1">
+                      <div className="absolute top-[-8px] left-0 right-0 flex justify-between px-[10px]">
+                         {[1,2,3,4,5].map(i => <div key={i} className="w-[2px] h-[6px] bg-ink opacity-20"></div>)}
+                      </div>
                       <span>Stressed</span>
                       <span>Calm</span>
                     </div>
@@ -244,7 +252,8 @@ export default function MyUnwindPage() {
                       type="range" min="0" max="14" step="0.5"
                       value={checkInState.sleep}
                       onChange={e => setCheckInState({...checkInState, sleep: parseFloat(e.target.value)})}
-                      className="w-full"
+                      className="w-full brutal-slider"
+                      style={{ "--slider-fill": `${((checkInState.sleep - 0) / 14) * 100}%` } as React.CSSProperties}
                     />
                   </div>
                   <button 

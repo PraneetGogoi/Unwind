@@ -217,7 +217,8 @@ export default function PredictorPage() {
                           step={config.step}
                           value={value}
                           onChange={handleChange}
-                          className="flex-1 accent-ink h-2 bg-frame brutal-border appearance-none cursor-pointer"
+                          className="flex-1 brutal-slider cursor-pointer"
+                          style={{ "--slider-fill": `${((value - config.min) / (config.max - config.min)) * 100}%` } as React.CSSProperties}
                         />
                       </div>
                       {diffText && (
