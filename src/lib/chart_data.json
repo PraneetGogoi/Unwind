@@ -89,5 +89,70 @@
       "stress_level": 0.5292774068965517,
       "bugs_per_day": 0.48762250453720507
     }
+  },
+  "correlation": {
+    "stress_level": {
+      "stress_level": 1.0,
+      "sleep_hours": -0.25,
+      "daily_work_hours": 0.6,
+      "experience_years": -0.02,
+      "commits_per_day": -0.01,
+      "caffeine_intake": 0.2,
+      "meetings_per_day": 0.35
+    },
+    "sleep_hours": {
+      "stress_level": -0.25,
+      "sleep_hours": 1.0,
+      "daily_work_hours": -0.01,
+      "experience_years": -0.0,
+      "commits_per_day": -0.0,
+      "caffeine_intake": -0.02,
+      "meetings_per_day": -0.0
+    },
+    "daily_work_hours": {
+      "stress_level": 0.6,
+      "sleep_hours": -0.01,
+      "daily_work_hours": 1.0,
+      "experience_years": -0.02,
+      "commits_per_day": -0.02,
+      "caffeine_intake": 0.01,
+      "meetings_per_day": 0.01
+    },
+    "experience_years": {
+      "stress_level": -0.02,
+      "sleep_hours": -0.0,
+      "daily_work_hours": -0.02,
+      "experience_years": 1.0,
+      "commits_per_day": -0.01,
+      "caffeine_intake": 0.0,
+      "meetings_per_day": 0.0
+    },
+    "commits_per_day": {
+      "stress_level": -0.01,
+      "sleep_hours": -0.0,
+      "daily_work_hours": -0.02,
+      "experience_years": -0.01,
+      "commits_per_day": 1.0,
+      "caffeine_intake": 0.01,
+      "meetings_per_day": 0.02
+    },
+    "caffeine_intake": {
+      "stress_level": 0.2,
+      "sleep_hours": -0.02,
+      "daily_work_hours": 0.01,
+      "experience_years": 0.0,
+      "commits_per_day": 0.01,
+      "caffeine_intake": 1.0,
+      "meetings_per_day": -0.02
+    },
+    "meetings_per_day": {
+      "stress_level": 0.35,
+      "sleep_hours": -0.0,
+      "daily_work_hours": 0.01,
+      "experience_years": 0.0,
+      "commits_per_day": 0.02,
+      "caffeine_intake": -0.02,
+      "meetings_per_day": 1.0
+    }
   }
 }

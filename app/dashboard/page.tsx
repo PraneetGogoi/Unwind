@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Activity, AlertCircle } from "lucide-react";
 import * as Tabs from "@radix-ui/react-tabs";
-import { getSignalAveragesChart, getBoxPlotChart, getSegmentChart, getRadarChart } from "@/lib/charts";
+import { getSignalAveragesChart, getBoxPlotChart, getSegmentChart, getRadarChart, getCorrelationHeatmap } from "@/lib/charts";
 import { useTheme } from "@/components/theme-provider";
 
 const PlotlyChart = dynamic(
@@ -61,6 +61,25 @@ function getFeatureChart(fontColor: string) {
       margin: { l: 150, r: 20, t: 40, b: 40 },
       xaxis: { title: { text: "Importance Score (0-1)" } },
       font: { family: MONO, color: fontColor, size: 12 },
+      annotations: [
+        {
+          x: 0.615,
+          y: "Stress Level",
+          xref: "x",
+          yref: "y",
+          text: "This single feature drives >60% of risk",
+          showarrow: true,
+          arrowhead: 2,
+          ax: -40,
+          ay: 40,
+          font: { size: 11, color: fontColor },
+          arrowcolor: fontColor,
+          bgcolor: fontColor === "#fdfbf7" ? "#222" : "#fff",
+          bordercolor: fontColor,
+          borderwidth: 1,
+          borderpad: 4
+        }
+      ]
     },
   };
 }
@@ -102,6 +121,7 @@ export default function DashboardPage() {
   const segmentChart = getSegmentChart();
   const radarChart = getRadarChart();
   const featureChart = getFeatureChart(fontColor);
+  const correlationChart = getCorrelationHeatmap(fontColor);
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-dots-bg text-ink selection:bg-ink selection:text-paper">
@@ -297,6 +317,24 @@ export default function DashboardPage() {
                       height={500}
                       layout={{
                         ...featureChart.layout,
+                        paper_bgcolor: 'transparent',
+                        plot_bgcolor: 'transparent'
+                      }}
+                    />
+                  </div>
+                </section>
+
+                <section className="mt-12">
+                  <h2 className="font-display text-2xl mb-1">Behavioral Correlation Matrix</h2>
+                  <p className="font-sans text-sm text-grey-text mb-4">
+                    Explore which habits move together. For instance, notice how High Meetings closely correlate with High Stress.
+                  </p>
+                  <div className="border-2 border-ink bg-dots-bg/50 p-2 overflow-x-auto">
+                    <PlotlyChart
+                      data={correlationChart.data as any}
+                      height={600}
+                      layout={{
+                        ...correlationChart.layout,
                         paper_bgcolor: 'transparent',
                         plot_bgcolor: 'transparent'
                       }}

@@ -130,3 +130,40 @@ export function getRadarChart() {
     }
   };
 }
+
+// 5. Correlation Heatmap
+export function getCorrelationHeatmap(fontColor: string) {
+  const corr = (chartData as any).correlation;
+  if (!corr) return { data: [], layout: {} };
+
+  const features = Object.keys(corr);
+  const prettyFeatures = features.map(f => f.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()));
+  
+  const zData = features.map(f1 => {
+    return features.map(f2 => corr[f1][f2]);
+  });
+
+  return {
+    data: [
+      {
+        type: 'heatmap',
+        z: zData,
+        x: prettyFeatures,
+        y: prettyFeatures,
+        colorscale: [
+          [0, '#2ecc71'], 
+          [0.5, '#fdfbf7'], 
+          [1, '#e74c3c'], 
+        ],
+        zmin: -1,
+        zmax: 1,
+        showscale: true,
+      }
+    ],
+    layout: {
+      title: { text: "Behavioral Signal Correlation Matrix" },
+      margin: { l: 150, r: 20, t: 40, b: 150 },
+      font: { family: "JetBrains Mono, ui-monospace, monospace", color: fontColor, size: 12 },
+    }
+  };
+}
