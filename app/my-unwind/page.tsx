@@ -20,18 +20,28 @@ type CheckIn = {
 
 export default function MyUnwindPage() {
   const [history, setHistory] = useState<any[]>([]);
-  const [focus, setFocus] = useState<{ title: string; color: string } | null>(null);
+  const [plan, setPlan] = useState<{ title: string; color: string }[]>([]);
+  const [habitsState, setHabitsState] = useState<Record<string, { streak: number, last_completed: string }>>({});
   const [streak, setStreak] = useState(0);
   const [hasCheckedInToday, setHasCheckedInToday] = useState(false);
   const [checkInState, setCheckInState] = useState({ energy: 3, mood: 3, sleep: 7 });
   const [checkIns, setCheckIns] = useState<CheckIn[]>([]);
+  const [breatheSessions, setBreatheSessions] = useState(0);
 
   useEffect(() => {
     const savedHistory = JSON.parse(localStorage.getItem("unwind_history") || "[]");
     setHistory(savedHistory);
 
-    const savedFocus = localStorage.getItem("unwind_focus");
-    if (savedFocus) setFocus(JSON.parse(savedFocus));
+    const savedPlan = localStorage.getItem("unwind_plan");
+    if (savedPlan) {
+      setPlan(JSON.parse(savedPlan));
+    } else {
+      const savedFocus = localStorage.getItem("unwind_focus");
+      if (savedFocus) setPlan([JSON.parse(savedFocus)]);
+    }
+
+    const savedHabits = localStorage.getItem("unwind_habits_state");
+    if (savedHabits) setHabitsState(JSON.parse(savedHabits));
 
     const savedStreak = parseInt(localStorage.getItem("unwind_streak") || "0", 10);
     setStreak(savedStreak);
@@ -43,6 +53,9 @@ export default function MyUnwindPage() {
     
     const savedCheckIns = JSON.parse(localStorage.getItem("unwind_daily_checkins") || "[]");
     setCheckIns(savedCheckIns);
+    
+    const sessions = parseInt(localStorage.getItem("unwind_breathe_sessions") || "0", 10);
+    setBreatheSessions(sessions);
   }, []);
 
   const handleCheckIn = () => {
@@ -58,6 +71,36 @@ export default function MyUnwindPage() {
     }];
     setCheckIns(newCheckIns);
     localStorage.setItem("unwind_daily_checkins", JSON.stringify(newCheckIns));
+  };
+
+  const handleCheckoffHabit = (title: string) => {
+    const today = new Date().toDateString();
+    const currentState = habitsState[title] || { streak: 0, last_completed: "" };
+    if (currentState.last_completed === today) return;
+
+    const newState = {
+      ...habitsState,
+      [title]: {
+        streak: currentState.streak + 1,
+        last_completed: today
+      }
+    };
+    setHabitsState(newState);
+    localStorage.setItem("unwind_habits_state", JSON.stringify(newState));
+  };
+
+  const handleReflectHabit = (title: string, status: "Yes" | "Kinda" | "No") => {
+    const historyLog = JSON.parse(localStorage.getItem("unwind_habit_history") || "[]");
+    historyLog.push({
+      title,
+      status,
+      date: new Date().toISOString()
+    });
+    localStorage.setItem("unwind_habit_history", JSON.stringify(historyLog));
+
+    const newPlan = plan.filter(p => p.title !== title);
+    setPlan(newPlan);
+    localStorage.setItem("unwind_plan", JSON.stringify(newPlan));
   };
 
   const levelMap: Record<string, number> = { "Low": 1, "Medium": 2, "High": 3 };
@@ -268,34 +311,53 @@ export default function MyUnwindPage() {
           </section>
 
           <section>
-            <h2 className="font-display text-2xl mb-4">Weekly Focus</h2>
+            <h2 className="font-display text-2xl mb-4">Weekly Plan</h2>
             <Card className="p-6 relative overflow-hidden h-full min-h-[300px]">
-              {focus ? (
-                <div className="relative z-10 flex flex-col h-full justify-between">
-                  <div>
-                    <div className="flex items-center gap-3 mb-4">
-                      <span className="font-mono text-xs uppercase font-bold tracking-wider text-muted-foreground">Active Focus</span>
-                    </div>
-                    <h3 className="font-display text-3xl mb-4" style={{ color: focus.color }}>
-                      {focus.title}
-                    </h3>
-                    <p className="font-bold mb-6">Building kinder weeks, one habit at a time.</p>
+              {plan.length > 0 ? (
+                <div className="relative z-10 flex flex-col h-full">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="font-mono text-xs uppercase font-bold tracking-wider text-muted-foreground">Active Habits</span>
+                    <Link href="/tips" className="text-xs font-bold hover:underline group inline-flex items-center gap-1">Edit plan <ArrowRight className="w-3 h-3 group-hover:translate-x-[2px] transition-transform" /></Link>
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2 font-mono text-sm font-bold bg-frame border-2 border-ink inline-flex px-3 py-1 mb-6">
-                      <CheckCircle2 className="w-4 h-4 text-ink" />
-                      <span>{streak} kinder days</span>
-                    </div>
-                    <Link href="/tips" className="mt-2 inline-flex items-center gap-2 text-sm font-bold hover:underline group">
-                      Change focus <ArrowRight className="w-4 h-4 arrow-icon group-hover:translate-x-1 transition-transform" />
-                    </Link>
+                  <div className="flex-1 space-y-4">
+                    {plan.map((p, idx) => {
+                      const hState = habitsState[p.title] || { streak: 0, last_completed: "" };
+                      const doneToday = hState.last_completed === new Date().toDateString();
+                      return (
+                        <div key={idx} className="border-2 border-ink bg-frame p-4 rounded-[3px]">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <h3 className="font-display text-xl flex items-center gap-2 mb-1" style={{ color: p.color }}>
+                                {p.title}
+                                {hState.streak > 0 && <span className="font-mono text-[10px] font-bold bg-ink text-paper px-1.5 py-0.5 rounded-[2px] ml-1 uppercase">{hState.streak} day streak</span>}
+                              </h3>
+                            </div>
+                            <button
+                              onClick={() => handleCheckoffHabit(p.title)}
+                              disabled={doneToday}
+                              title="Mark complete for today"
+                              className={`w-6 h-6 rounded-[3px] border-2 border-ink flex items-center justify-center transition-colors ${doneToday ? 'bg-ink text-paper' : 'bg-paper hover:bg-ink hover:text-paper shadow-hard-sm'}`}
+                            >
+                              {doneToday && <CheckCircle2 className="w-4 h-4" />}
+                            </button>
+                          </div>
+                          
+                          <div className="mt-4 pt-3 border-t-2 border-ink/20 flex flex-wrap items-center gap-2">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mr-1">Reflect:</span>
+                            <button onClick={() => handleReflectHabit(p.title, "Yes")} className="text-[10px] font-bold uppercase tracking-widest bg-paper border-2 border-ink px-2 py-1 hover:bg-low hover:text-ink transition-colors rounded-[3px]">Helped</button>
+                            <button onClick={() => handleReflectHabit(p.title, "Kinda")} className="text-[10px] font-bold uppercase tracking-widest bg-paper border-2 border-ink px-2 py-1 hover:bg-frame hover:text-ink transition-colors rounded-[3px]">Kinda</button>
+                            <button onClick={() => handleReflectHabit(p.title, "No")} className="text-[10px] font-bold uppercase tracking-widest bg-paper border-2 border-ink px-2 py-1 hover:bg-high hover:text-paper transition-colors rounded-[3px]">Didn't</button>
+                          </div>
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               ) : (
                 <div className="relative z-10 text-center py-8 border-2 border-dashed border-ink rounded-[3px] h-full flex flex-col items-center justify-center">
-                  <p className="font-bold mb-6">You haven't picked a focus yet.</p>
+                  <p className="font-bold mb-6">You haven't picked any habits yet.</p>
                   <Link href="/tips" className="brutal-btn brutal-btn-primary inline-block px-6 py-3 font-bold">
-                    Pick a focus
+                    Build your plan
                   </Link>
                 </div>
               )}
@@ -328,12 +390,20 @@ export default function MyUnwindPage() {
           </section>
 
           <section>
-            <h2 className="font-display text-2xl mb-4">Quick Action</h2>
-            <Card className="p-6 bg-ink text-paper h-64 flex flex-col justify-center items-center text-center">
-              <h2 className="font-display text-3xl mb-4 text-paper">Feeling overwhelmed?</h2>
-              <p className="font-sans mb-8 font-bold opacity-90">Take a minute to reset your nervous system.</p>
-              <Link href="/breathe" className="brutal-btn bg-paper text-ink border-2 border-paper w-full py-3 font-bold text-lg inline-flex items-center justify-center gap-2 group">
-                Take a 4-7-8 minute <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            <h2 className="font-display text-2xl mb-4">Breathe & Reset</h2>
+            <Card className="p-6 bg-ink text-paper h-64 flex flex-col justify-between items-center text-center">
+              <div>
+                <h2 className="font-display text-3xl mb-2 text-paper">Feeling overwhelmed?</h2>
+                <p className="font-sans mb-4 font-bold opacity-90">Take a minute to reset your nervous system.</p>
+                {breatheSessions > 0 && (
+                  <div className="inline-flex items-center gap-2 font-mono text-sm font-bold bg-frame text-ink border-2 border-paper px-3 py-1">
+                    <Circle className="w-4 h-4" />
+                    <span>{breatheSessions} sessions completed</span>
+                  </div>
+                )}
+              </div>
+              <Link href="/breathe" className="brutal-btn bg-paper text-ink border-2 border-paper w-full py-3 font-bold text-lg inline-flex items-center justify-center gap-2 group mt-4">
+                Take a breather <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
             </Card>
           </section>

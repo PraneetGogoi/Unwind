@@ -60,17 +60,29 @@ export default function PredictorPage() {
     setStatus("LOADING");
 
     try {
-      const res = await fetch("/api/predict", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-      if (!res.ok) {
-        throw new Error(`API Error: ${res.status}`);
+      const [predictRes, explainRes] = await Promise.all([
+        fetch("/api/predict", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        }),
+        fetch("/api/explain", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        })
+      ]);
+      
+      if (!predictRes.ok || !explainRes.ok) {
+        throw new Error(`API Error: ${predictRes.status}`);
       }
-      const data = await res.json();
-      setResult(data);
-      setBaseResult(data);
+      
+      const data = await predictRes.json();
+      const explainData = await explainRes.json();
+      const fullData = { ...data, top_drivers: explainData.top_drivers };
+      
+      setResult(fullData);
+      setBaseResult(fullData);
       setBaseFormData({...formData});
       setStatus("SHOW_RESULT");
       
@@ -78,10 +90,10 @@ export default function PredictorPage() {
       history.push({
         timestamp: new Date().toISOString(),
         inputs: formData,
-        result: data
+        result: fullData
       });
       localStorage.setItem("unwind_history", JSON.stringify(history));
-      localStorage.setItem("unwind_latest_prediction", JSON.stringify({ inputs: formData, result: data }));
+      localStorage.setItem("unwind_latest_prediction", JSON.stringify({ inputs: formData, result: fullData }));
     } catch (err) {
       console.error(err);
       alert("Failed to connect to the prediction API.");
@@ -94,16 +106,24 @@ export default function PredictorPage() {
     if (status !== "SIMULATOR") return;
     const timer = setTimeout(async () => {
       try {
-        const res = await fetch("/api/predict", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
-        });
-        if (!res.ok) {
-          throw new Error(`API Error: ${res.status}`);
+        const [predictRes, explainRes] = await Promise.all([
+          fetch("/api/predict", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(formData),
+          }),
+          fetch("/api/explain", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(formData),
+          })
+        ]);
+        if (!predictRes.ok || !explainRes.ok) {
+          throw new Error(`API Error`);
         }
-        const data = await res.json();
-        setResult(data);
+        const data = await predictRes.json();
+        const explainData = await explainRes.json();
+        setResult({ ...data, top_drivers: explainData.top_drivers });
       } catch (err) {
         console.error("Simulator API error", err);
       }
@@ -128,6 +148,15 @@ export default function PredictorPage() {
   };
 
   const getContributions = () => {
+    if (result?.top_drivers) {
+      return result.top_drivers.map((d: any) => ({
+        key: d.feature,
+        name: d.feature.replace(/_/g, " "),
+        value: Math.abs(d.impact),
+        type: d.impact > 0 ? "up" : "down"
+      }));
+    }
+
     if (!result || !result.baseline_stats) return [];
     const b = result.baseline_stats;
     const c = [];
@@ -155,7 +184,7 @@ export default function PredictorPage() {
   };
 
   const handleAddPlan = () => {
-    const topDriver = getContributions().find(c => c.type === "up");
+    const topDriver = getContributions().find((c: any) => c.type === "up");
     let focusName = "Sleep";
     if (topDriver) {
       if (topDriver.key.includes("screen")) focusName = "Screen time";
@@ -339,7 +368,7 @@ export default function PredictorPage() {
                       Contribution Breakdown
                     </h3>
                     <div className="space-y-4 mb-8 flex-1">
-                      {getContributions().map((c, i) => (
+                      {getContributions().map((c: any, i: number) => (
                         <div key={i} className="flex flex-col gap-1">
                           <div className="flex justify-between text-xs font-mono font-bold">
                             <span className="uppercase">{c.name}</span>

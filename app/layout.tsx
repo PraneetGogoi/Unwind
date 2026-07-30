@@ -27,6 +27,7 @@ export const metadata: Metadata = {
 };
 
 import { Header } from "@/components/Header";
+import { CommandPalette } from "@/components/CommandPalette";
 
 export default function RootLayout({
   children,
@@ -60,7 +61,21 @@ export default function RootLayout({
             }}
           />
           <Header />
-          <div className="min-h-[calc(100vh-4rem)]">{children}</div>
+          <div className="min-h-[calc(100vh-4rem-6rem)]">{children}</div>
+          <footer className="border-t-2 border-ink bg-frame py-6 px-4">
+            <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono font-bold uppercase text-muted-foreground">
+              <div className="flex gap-4">
+                <span>© {new Date().getFullYear()} Unwind</span>
+                <span>Not Medical Advice</span>
+              </div>
+              <div className="flex gap-6">
+                <a href="#" className="hover:text-ink hover:underline decoration-2 underline-offset-2">GitHub</a>
+                <a href="#" className="hover:text-ink hover:underline decoration-2 underline-offset-2">Portfolio</a>
+                <span>Your data stays on your device.</span>
+              </div>
+            </div>
+          </footer>
+          <CommandPalette />
         </ThemeProvider>
       </body>
     </html>
