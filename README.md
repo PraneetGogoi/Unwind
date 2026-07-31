@@ -23,11 +23,12 @@ Unwind isn't just a dashboard—it's a complete diagnostic and recovery cycle bu
 This project is built with a decoupled architecture, optimizing for a snappy frontend and an ML-capable backend.
 
 ### **Frontend**
-- **Framework:** Next.js (App Router) + React
-- **Styling & UI:** Tailwind CSS v4, custom brutalist design system (Navy/Cream), Radix UI primitives.
+- **Framework:** Next.js (App Router) + React 19 + TypeScript
+- **Styling & UI:** Tailwind CSS v4, custom brutalist design system (Navy/Cream), Radix UI primitives, and Lucide React icons.
 - **Animations:** Framer Motion for complex, physics-based interactions (like the Breathe orb).
-- **Visualization:** Plotly.js (lazy-loaded via `next/dynamic` for performance) for rich interactive charts.
-- **State & Privacy:** 100% local. All user history, habits, and preferences are stored in `localStorage`. Your data never leaves your device.
+- **Visualization:** Plotly.js (lazy-loaded) and Recharts for rich interactive charts.
+- **State & Privacy:** 100% local. All user history, habits, and preferences are stored efficiently in **IndexedDB via Dexie.js** (migrated from `localStorage`). Your data never leaves your device.
+- **PWA Ready:** Fully configured as a Progressive Web App (PWA) for offline capabilities and native-like installation.
 
 ### **Backend & Machine Learning**
 - **API:** Python with **FastAPI** for high-performance, async endpoint handling.
