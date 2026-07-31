@@ -6,7 +6,7 @@ import Link from "next/link";
 import { ArrowRight, Activity, AlertCircle } from "lucide-react";
 import * as Tabs from "@radix-ui/react-tabs";
 import { getSignalAveragesChart, getBoxPlotChart, getSegmentChart, getRadarChart, getCorrelationHeatmap } from "@/lib/charts";
-import { useLiveQuery } from "dexie-react-hooks";
+import { useYSetting } from "@/lib/db";
 import { db } from "@/lib/db";
 import { useTheme } from "@/components/theme-provider";
 
@@ -97,7 +97,7 @@ export default function DashboardPage() {
   const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState("you-vs-data");
   const fontColor = theme === "dark" ? "#fdfbf7" : "#1a365d";
-  const predictionData = useLiveQuery(() => db.settings.get("unwind_latest_prediction"))?.value;
+  const predictionData = useYSetting<any>("unwind_latest_prediction", null);
 
   const userMetrics = predictionData?.inputs;
   const prediction = predictionData?.result?.prediction;

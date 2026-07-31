@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useLiveQuery } from "dexie-react-hooks";
+import { useYSetting } from "@/lib/db";
 import { db } from "@/lib/db";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -23,6 +23,7 @@ const NAV_GROUPS = [
       { name: "Predict", path: "/predict" },
       { name: "Breathe", path: "/breathe" },
       { name: "Tips", path: "/tips" },
+      { name: "Sync", path: "/sync" },
     ]
   },
   {
@@ -51,7 +52,7 @@ export function Header() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const latestPrediction = useLiveQuery(() => db.settings.get("unwind_latest_prediction"))?.value;
+  const latestPrediction = useYSetting<any>("unwind_latest_prediction", null);
   const riskLevel = latestPrediction?.result?.prediction || null;
   const riskTimestamp = latestPrediction?.timestamp ? formatDistanceToNow(new Date(latestPrediction.timestamp), { addSuffix: true }) : null;
 
@@ -153,10 +154,10 @@ export function Header() {
           <div className="hidden md:flex items-center gap-3">
             <button
               onClick={() => window.dispatchEvent(new CustomEvent('unwind-toggle-cmdk'))}
-              className="brutal-btn brutal-btn-ghost flex items-center gap-2 px-3 py-2 font-mono text-xs font-bold text-muted-foreground"
+              className="brutal-btn bg-paper flex items-center justify-center gap-2 px-3 h-10 font-mono text-sm font-bold text-ink"
               aria-label="Open Command Palette"
             >
-              <Command className="w-4 h-4 text-ink" />
+              <Command className="w-4 h-4" />
               <span>⌘K</span>
             </button>
             <button

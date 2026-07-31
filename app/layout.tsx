@@ -29,6 +29,7 @@ export const metadata: Metadata = {
 import { Header } from "@/components/Header";
 import { CommandPalette } from "@/components/CommandPalette";
 import { DatabaseProvider } from "@/components/DatabaseProvider";
+import { PageTransition } from "@/components/PageTransition";
 
 export default function RootLayout({
   children,
@@ -63,7 +64,9 @@ export default function RootLayout({
           />
           <DatabaseProvider>
             <Header />
-            <div className="min-h-[calc(100vh-4rem-6rem)]">{children}</div>
+            <div className="min-h-[calc(100vh-4rem-6rem)]">
+              <PageTransition>{children}</PageTransition>
+            </div>
             <footer className="border-t-2 border-ink bg-frame py-6 px-4">
               <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono font-bold uppercase text-muted-foreground">
                 <div className="flex gap-4">

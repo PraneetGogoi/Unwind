@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, Circle, Flame, Calendar, Activity, Zap, Moon, Frown, FileText, ChevronRight } from "lucide-react";
-import { useLiveQuery } from "dexie-react-hooks";
+import { useYSetting } from "@/lib/db";
 import { db, getSetting, setSetting } from "@/lib/db";
 import dynamic from "next/dynamic";
 import { Card } from "@/components/ui/card";
@@ -21,21 +21,20 @@ type CheckIn = {
 };
 
 export default function MyUnwindPage() {
-  const history = useLiveQuery(() => db.settings.get("unwind_history"))?.value || [];
-  
-  const planSetting = useLiveQuery(() => db.settings.get("unwind_plan"))?.value;
-  const focusSetting = useLiveQuery(() => db.settings.get("unwind_focus"))?.value;
+  const history = useYSetting<any[]>("unwind_history", []);
+  const planSetting = useYSetting<any>("unwind_plan", null);
+  const focusSetting = useYSetting<any>("unwind_focus", null);
   const plan = planSetting ? planSetting : (focusSetting ? [focusSetting] : []);
 
-  const habitsState = useLiveQuery(() => db.settings.get("unwind_habits_state"))?.value || {};
-  const streak = useLiveQuery(() => db.settings.get("unwind_streak"))?.value || 0;
+  const habitsState = useYSetting<any>("unwind_habits_state", {});
+  const streak = useYSetting<number>("unwind_streak", 0);
   
-  const lastCheckIn = useLiveQuery(() => db.settings.get("unwind_last_checkin"))?.value;
+  const lastCheckIn = useYSetting<any>("unwind_last_checkin", null);
   const hasCheckedInToday = lastCheckIn === new Date().toDateString();
 
   const [checkInState, setCheckInState] = useState({ energy: 3, mood: 3, sleep: 7 });
-  const checkIns = useLiveQuery(() => db.settings.get("unwind_daily_checkins"))?.value || [];
-  const breatheSessions = useLiveQuery(() => db.settings.get("unwind_breathe_sessions"))?.value || 0;
+  const checkIns = useYSetting<any[]>("unwind_daily_checkins", []);
+  const breatheSessions = useYSetting<number>("unwind_breathe_sessions", 0);
 
   const handleCheckIn = async () => {
     const newStreak = streak + 1;

@@ -3,15 +3,15 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowUpRight, ArrowRight, CheckCircle2, Activity, Brain, Wind } from "lucide-react";
-import { useLiveQuery } from "dexie-react-hooks";
+import { useYSetting } from "@/lib/db";
 import { db } from "@/lib/db";
 
 export default function LandingPage() {
   const [hasData, setHasData] = useState(false);
   const [prediction, setPrediction] = useState<string | null>(null);
-  const latestPrediction = useLiveQuery(() => db.settings.get("unwind_latest_prediction"))?.value;
-  const streak = useLiveQuery(() => db.settings.get("unwind_streak"))?.value || 0;
-  const plan = useLiveQuery(() => db.settings.get("unwind_plan"))?.value || [];
+  const latestPrediction = useYSetting<any>("unwind_latest_prediction", null);
+  const streak = useYSetting<number>("unwind_streak", 0);
+  const plan = useYSetting<any[]>("unwind_plan", []);
 
   useEffect(() => {
     if (latestPrediction) {

@@ -1,31 +1,66 @@
 import Dexie, { type EntityTable } from 'dexie';
+import * as Y from 'yjs';
+import { IndexeddbPersistence } from 'y-indexeddb';
+import { useState, useEffect } from 'react';
 
+// -- Legacy Dexie DB (for migration) --
 export interface KeyValSetting {
   key: string;
   value: any;
 }
-
-const db = new Dexie('UnwindDB') as Dexie & {
+const legacyDb = new Dexie('UnwindDB') as Dexie & {
   settings: EntityTable<KeyValSetting, 'key'>;
 };
+legacyDb.version(1).stores({ settings: 'key' });
+export const db = legacyDb;
 
-db.version(1).stores({
-  settings: 'key'
-});
+// -- Yjs Setup --
+export const ydoc = new Y.Doc();
+export const ySettings = ydoc.getMap('settings');
+
+let syncPromise: Promise<void> | null = null;
+
+export async function initYjs() {
+  if (typeof window === "undefined") return;
+  if (syncPromise) return syncPromise;
+  
+  syncPromise = new Promise((resolve) => {
+    const provider = new IndexeddbPersistence('unwind-yjs-db', ydoc);
+    provider.on('synced', async () => {
+      // Migrate from Dexie if not already migrated to Yjs
+      if (!localStorage.getItem('unwind_migrated_to_yjs')) {
+        try {
+          const allSettings = await legacyDb.settings.toArray();
+          ydoc.transact(() => {
+            allSettings.forEach(setting => {
+              if (!ySettings.has(setting.key)) {
+                ySettings.set(setting.key, setting.value);
+              }
+            });
+          });
+          localStorage.setItem('unwind_migrated_to_yjs', 'true');
+        } catch (e) {
+          console.error("Failed to migrate Dexie to Yjs", e);
+        }
+      }
+      resolve();
+    });
+  });
+  
+  return syncPromise;
+}
 
 export async function getSetting<T>(key: string, defaultValue: T): Promise<T> {
-  if (typeof window === "undefined") return defaultValue; // SSR safety
-  try {
-    const item = await db.settings.get(key);
-    return item !== undefined ? item.value : defaultValue;
-  } catch {
-    return defaultValue;
-  }
+  if (typeof window === "undefined") return defaultValue;
+  await initYjs();
+  const val = ySettings.get(key);
+  return val !== undefined ? (val as T) : defaultValue;
 }
 
 export async function setSetting<T>(key: string, value: T): Promise<void> {
   if (typeof window === "undefined") return;
-  await db.settings.put({ key, value });
+  await initYjs();
+  ySettings.set(key, value);
 }
 
 export async function migrateFromLocalStorage() {
@@ -61,4 +96,33 @@ export async function migrateFromLocalStorage() {
   localStorage.setItem("unwind_migrated_to_dexie_v1", "true");
 }
 
-export { db };
+export function useYSetting<T>(key: string, defaultValue: T): T {
+  const [val, setVal] = useState<T>(defaultValue);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    let isMounted = true;
+
+    initYjs().then(() => {
+      if (!isMounted) return;
+      const initialVal = ySettings.get(key);
+      if (initialVal !== undefined) setVal(initialVal as T);
+    });
+
+    const observer = (event: Y.YMapEvent<any>) => {
+      if (event.keysChanged.has(key)) {
+        const newVal = ySettings.get(key);
+        setVal(newVal !== undefined ? (newVal as T) : defaultValue);
+      }
+    };
+
+    ySettings.observe(observer);
+
+    return () => {
+      isMounted = false;
+      ySettings.unobserve(observer);
+    };
+  }, [key, defaultValue]);
+
+  return val;
+}
