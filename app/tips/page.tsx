@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
-import { Moon, Coffee, Activity, Brain, Users, Monitor, Shield, Layout, Heart, Palmtree, ArrowRight, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Brain, Battery, Flame, Activity, Clock, Users, Cpu, Shield, Zap, Circle, CheckCircle2, Star, TrendingDown, ArrowDownRight, Moon, Coffee, Monitor, Layout, Heart, Palmtree } from "lucide-react";
+import { getSetting, setSetting } from "@/lib/db";
 
 type TipCategory = {
   icon: any;
@@ -148,67 +149,68 @@ export default function TipsPage() {
   const [history, setHistory] = useState<any[]>([]);
 
   useEffect(() => {
-    // Migrate single focus to plan array if needed
-    const savedPlan = localStorage.getItem("unwind_plan");
-    if (savedPlan) {
-      setPlan(JSON.parse(savedPlan));
-    } else {
-      const singleFocus = localStorage.getItem("unwind_focus");
-      if (singleFocus) {
-        const pf = JSON.parse(singleFocus);
-        setPlan([pf]);
-        localStorage.setItem("unwind_plan", JSON.stringify([pf]));
+    async function loadData() {
+      let savedPlan = await getSetting("unwind_plan", null);
+      if (savedPlan) {
+        setPlan(savedPlan);
+      } else {
+        const singleFocus = await getSetting("unwind_focus", null);
+        if (singleFocus) {
+          setPlan([singleFocus]);
+          await setSetting("unwind_plan", [singleFocus]);
+        }
+      }
+
+      const savedHistory = await getSetting("unwind_habit_history", []);
+      setHistory(savedHistory);
+
+      const noCounts: Record<string, number> = {};
+      savedHistory.forEach((h: any) => {
+        if (h.status === "No") noCounts[h.title] = (noCounts[h.title] || 0) + 1;
+      });
+      const downrankedTitles = Object.keys(noCounts).filter(t => noCounts[t] >= 2);
+
+      const latestPrediction = await getSetting("unwind_latest_prediction", null);
+      if (latestPrediction && latestPrediction.inputs && latestPrediction.result) {
+        setPersonalData(latestPrediction.inputs);
+        const topDrivers = latestPrediction.result.top_drivers || [];
+        
+        const mapping: Record<string, string> = {
+          sleep_hours: "Sleep", caffeine_intake: "Caffeine", exercise_hours: "Movement",
+          commits_per_day: "Focus", meetings_per_day: "Meetings", screen_time: "Screen time", daily_work_hours: "Boundaries"
+        };
+
+        const riskDrivingFeatures = topDrivers.filter((d: any) => d.impact > 0).map((d: any) => d.feature);
+        const recommendations = riskDrivingFeatures.map((f: string) => mapping[f]).filter(Boolean);
+
+        const processedCats = CATEGORIES.map(c => {
+           let impact: number | undefined;
+           if (c.relatedInput) {
+             const d = topDrivers.find((td: any) => td.feature === c.relatedInput);
+             if (d && d.impact > 0) impact = d.impact;
+           }
+           return {
+             ...c,
+             recommended: recommendations.includes(c.title),
+             driverImpact: impact,
+             downranked: downrankedTitles.includes(c.title)
+           };
+        });
+        
+        const recCats = processedCats.filter(c => c.recommended && !c.downranked);
+        const nCats = processedCats.filter(c => !c.recommended && !c.downranked);
+        const downCats = processedCats.filter(c => c.downranked);
+        setCategories([...recCats, ...nCats, ...downCats]);
+      } else {
+        const processedCats = CATEGORIES.map(c => ({ ...c, downranked: downrankedTitles.includes(c.title) }));
+        setCategories([...processedCats.filter(c => !c.downranked), ...processedCats.filter(c => c.downranked)]);
       }
     }
-
-    const savedHistory = JSON.parse(localStorage.getItem("unwind_habit_history") || "[]");
-    setHistory(savedHistory);
-
-    // Compute history stats for downranking
-    const noCounts: Record<string, number> = {};
-    savedHistory.forEach((h: any) => {
-      if (h.status === "No") noCounts[h.title] = (noCounts[h.title] || 0) + 1;
-    });
-    const downrankedTitles = Object.keys(noCounts).filter(t => noCounts[t] >= 2);
-
-    const latestPrediction = JSON.parse(localStorage.getItem("unwind_latest_prediction") || "null");
-    if (latestPrediction && latestPrediction.inputs && latestPrediction.result) {
-      setPersonalData(latestPrediction.inputs);
-      const topDrivers = latestPrediction.result.top_drivers || [];
-      
-      const mapping: Record<string, string> = {
-        sleep_hours: "Sleep", caffeine_intake: "Caffeine", exercise_hours: "Movement",
-        commits_per_day: "Focus", meetings_per_day: "Meetings", screen_time: "Screen time", daily_work_hours: "Boundaries"
-      };
-
-      const riskDrivingFeatures = topDrivers.filter((d: any) => d.impact > 0).map((d: any) => d.feature);
-      const recommendations = riskDrivingFeatures.map((f: string) => mapping[f]).filter(Boolean);
-
-      const processedCats = CATEGORIES.map(c => {
-         let impact: number | undefined;
-         if (c.relatedInput) {
-           const d = topDrivers.find((td: any) => td.feature === c.relatedInput);
-           if (d && d.impact > 0) impact = d.impact;
-         }
-         return {
-           ...c,
-           recommended: recommendations.includes(c.title),
-           driverImpact: impact,
-           downranked: downrankedTitles.includes(c.title)
-         };
-      });
-      
-      const recCats = processedCats.filter(c => c.recommended && !c.downranked);
-      const nCats = processedCats.filter(c => !c.recommended && !c.downranked);
-      const downCats = processedCats.filter(c => c.downranked);
-      setCategories([...recCats, ...nCats, ...downCats]);
-    } else {
-      const processedCats = CATEGORIES.map(c => ({ ...c, downranked: downrankedTitles.includes(c.title) }));
-      setCategories([...processedCats.filter(c => !c.downranked), ...processedCats.filter(c => c.downranked)]);
-    }
+    
+    loadData();
   }, []);
 
-  const handleTogglePlan = (category: TipCategory) => {
+  const handleTogglePlan = async (category: TipCategory) => {
     let newPlan = [...plan];
     const exists = newPlan.find(p => p.title === category.title);
     if (exists) {
@@ -221,7 +223,7 @@ export default function TipsPage() {
       newPlan.push({ title: category.title, color: category.color });
     }
     setPlan(newPlan);
-    localStorage.setItem("unwind_plan", JSON.stringify(newPlan));
+    await setSetting("unwind_plan", newPlan);
   };
 
   const toggleTip = (id: string) => {

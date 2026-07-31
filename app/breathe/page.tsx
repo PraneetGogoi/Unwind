@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import { ArrowRight, Volume2, VolumeX, Pause, Play, Settings2 } from "lucide-react";
+import { Settings, Play, Pause, X, Volume2, VolumeX, Moon, Zap, ArrowLeft, RefreshCw, ArrowRight } from "lucide-react";
+import { getSetting, setSetting } from "@/lib/db";
 import { motion, useAnimation } from "framer-motion";
 
 type PatternType = "4-7-8" | "box" | "sigh" | "custom";
@@ -260,8 +261,8 @@ export default function BreathePage() {
     
     if (sessionRef.current.active) {
        setActivePhaseName("DONE");
-       const sessions = parseInt(localStorage.getItem("unwind_breathe_sessions") || "0");
-       localStorage.setItem("unwind_breathe_sessions", (sessions + 1).toString());
+       const sessions = await getSetting("unwind_breathe_sessions", 0);
+       await setSetting("unwind_breathe_sessions", sessions + 1);
     }
   };
 
@@ -291,7 +292,7 @@ export default function BreathePage() {
   const isDone = activePhaseName === "DONE";
 
   const getPhaseLabel = () => {
-    if (isIdle) return "Start";
+    if (isIdle) return "START";
     if (isDone) return "Done";
     if (isPaused) return "Paused";
     if (activePhaseName === "INHALE") return "Inhale...";
@@ -336,12 +337,14 @@ export default function BreathePage() {
             <p className="font-sans text-xl text-grey-text mb-12">
               Feeling steadier? You just completed {pattern.name}.
             </p>
-            <Link
-              href="/my-unwind"
-              className="brutal-btn brutal-btn-primary inline-flex items-center gap-2 px-8 py-4 font-bold text-lg"
-            >
-              Log Session in My Unwind <ArrowRight className="w-5 h-5 arrow-icon" />
-            </Link>
+            <div className="flex justify-center mt-12 w-full max-w-sm">
+              <Link 
+                href="/my-unwind" 
+                className="brutal-btn brutal-btn-primary w-full py-4 text-center font-mono font-bold text-lg flex items-center justify-center gap-2"
+              >
+                [ LOG_SESSION.EXE ] <ArrowRight className="w-5 h-5 arrow-icon" />
+              </Link>
+            </div>
           </div>
         ) : (
           <>
@@ -361,7 +364,7 @@ export default function BreathePage() {
                       onClick={() => setPatternId("custom")}
                       className={`px-4 py-2 font-bold text-sm transition-colors flex items-center gap-2 focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-2 ${patternId === "custom" ? 'bg-ink text-paper' : 'hover:bg-paper'}`}
                     >
-                      <Settings2 className="w-4 h-4" /> Custom
+                      <Settings className="w-4 h-4" /> Custom
                   </button>
                 </div>
                 
@@ -436,6 +439,7 @@ export default function BreathePage() {
                     <motion.div
                       className="absolute inset-0 bg-ink rounded-full"
                       style={{ originX: 0.5, originY: 0.5 }}
+                      initial={{ scale: 0.5, opacity: 0.2 }}
                       animate={orbControls}
                     />
                  ) : (
@@ -462,16 +466,16 @@ export default function BreathePage() {
               <div className="mt-12 flex gap-8">
                  <button
                    onClick={togglePause}
-                   className="flex items-center gap-2 text-sm font-bold text-ink bg-paper px-4 py-2 brutal-border shadow-hard-sm hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-2"
+                   className="brutal-btn brutal-btn-ghost flex items-center gap-2 text-sm font-bold font-mono px-4 py-2"
                  >
                    {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
-                   {isPaused ? "Resume" : "Pause"}
+                   {isPaused ? "[ RESUME ]" : "[ PAUSE ]"}
                  </button>
                  <button
                    onClick={cancelSession}
-                   className="flex items-center gap-2 text-sm font-bold text-grey-text hover:text-ink underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-2"
+                   className="brutal-btn brutal-btn-destructive flex items-center gap-2 text-sm font-bold font-mono px-4 py-2"
                  >
-                   Cancel session
+                   [ CANCEL.EXE ]
                  </button>
               </div>
             )}

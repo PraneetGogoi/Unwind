@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, Circle } from "lucide-react";
+import { ArrowRight, CheckCircle2, Circle, Flame, Calendar, Activity, Zap, Moon, Frown, FileText, ChevronRight } from "lucide-react";
+import { useLiveQuery } from "dexie-react-hooks";
+import { db, getSetting, setSetting } from "@/lib/db";
 import dynamic from "next/dynamic";
 import { Card } from "@/components/ui/card";
 
@@ -19,61 +21,35 @@ type CheckIn = {
 };
 
 export default function MyUnwindPage() {
-  const [history, setHistory] = useState<any[]>([]);
-  const [plan, setPlan] = useState<{ title: string; color: string }[]>([]);
-  const [habitsState, setHabitsState] = useState<Record<string, { streak: number, last_completed: string }>>({});
-  const [streak, setStreak] = useState(0);
-  const [hasCheckedInToday, setHasCheckedInToday] = useState(false);
+  const history = useLiveQuery(() => db.settings.get("unwind_history"))?.value || [];
+  
+  const planSetting = useLiveQuery(() => db.settings.get("unwind_plan"))?.value;
+  const focusSetting = useLiveQuery(() => db.settings.get("unwind_focus"))?.value;
+  const plan = planSetting ? planSetting : (focusSetting ? [focusSetting] : []);
+
+  const habitsState = useLiveQuery(() => db.settings.get("unwind_habits_state"))?.value || {};
+  const streak = useLiveQuery(() => db.settings.get("unwind_streak"))?.value || 0;
+  
+  const lastCheckIn = useLiveQuery(() => db.settings.get("unwind_last_checkin"))?.value;
+  const hasCheckedInToday = lastCheckIn === new Date().toDateString();
+
   const [checkInState, setCheckInState] = useState({ energy: 3, mood: 3, sleep: 7 });
-  const [checkIns, setCheckIns] = useState<CheckIn[]>([]);
-  const [breatheSessions, setBreatheSessions] = useState(0);
+  const checkIns = useLiveQuery(() => db.settings.get("unwind_daily_checkins"))?.value || [];
+  const breatheSessions = useLiveQuery(() => db.settings.get("unwind_breathe_sessions"))?.value || 0;
 
-  useEffect(() => {
-    const savedHistory = JSON.parse(localStorage.getItem("unwind_history") || "[]");
-    setHistory(savedHistory);
-
-    const savedPlan = localStorage.getItem("unwind_plan");
-    if (savedPlan) {
-      setPlan(JSON.parse(savedPlan));
-    } else {
-      const savedFocus = localStorage.getItem("unwind_focus");
-      if (savedFocus) setPlan([JSON.parse(savedFocus)]);
-    }
-
-    const savedHabits = localStorage.getItem("unwind_habits_state");
-    if (savedHabits) setHabitsState(JSON.parse(savedHabits));
-
-    const savedStreak = parseInt(localStorage.getItem("unwind_streak") || "0", 10);
-    setStreak(savedStreak);
-
-    const lastCheckIn = localStorage.getItem("unwind_last_checkin");
-    if (lastCheckIn === new Date().toDateString()) {
-      setHasCheckedInToday(true);
-    }
-    
-    const savedCheckIns = JSON.parse(localStorage.getItem("unwind_daily_checkins") || "[]");
-    setCheckIns(savedCheckIns);
-    
-    const sessions = parseInt(localStorage.getItem("unwind_breathe_sessions") || "0", 10);
-    setBreatheSessions(sessions);
-  }, []);
-
-  const handleCheckIn = () => {
-    setHasCheckedInToday(true);
+  const handleCheckIn = async () => {
     const newStreak = streak + 1;
-    setStreak(newStreak);
-    localStorage.setItem("unwind_streak", newStreak.toString());
-    localStorage.setItem("unwind_last_checkin", new Date().toDateString());
+    await setSetting("unwind_streak", newStreak);
+    await setSetting("unwind_last_checkin", new Date().toDateString());
     
     const newCheckIns = [...checkIns, {
       date: new Date().toISOString(),
       ...checkInState
     }];
-    setCheckIns(newCheckIns);
-    localStorage.setItem("unwind_daily_checkins", JSON.stringify(newCheckIns));
+    await setSetting("unwind_daily_checkins", newCheckIns);
   };
 
-  const handleCheckoffHabit = (title: string) => {
+  const handleCheckoffHabit = async (title: string) => {
     const today = new Date().toDateString();
     const currentState = habitsState[title] || { streak: 0, last_completed: "" };
     if (currentState.last_completed === today) return;
@@ -85,22 +61,20 @@ export default function MyUnwindPage() {
         last_completed: today
       }
     };
-    setHabitsState(newState);
-    localStorage.setItem("unwind_habits_state", JSON.stringify(newState));
+    await setSetting("unwind_habits_state", newState);
   };
 
-  const handleReflectHabit = (title: string, status: "Yes" | "Kinda" | "No") => {
-    const historyLog = JSON.parse(localStorage.getItem("unwind_habit_history") || "[]");
+  const handleReflectHabit = async (title: string, status: "Yes" | "Kinda" | "No") => {
+    const historyLog = await getSetting("unwind_habit_history", []);
     historyLog.push({
       title,
       status,
       date: new Date().toISOString()
     });
-    localStorage.setItem("unwind_habit_history", JSON.stringify(historyLog));
+    await setSetting("unwind_habit_history", historyLog);
 
-    const newPlan = plan.filter(p => p.title !== title);
-    setPlan(newPlan);
-    localStorage.setItem("unwind_plan", JSON.stringify(newPlan));
+    const newPlan = plan.filter((p: any) => p.title !== title);
+    await setSetting("unwind_plan", newPlan);
   };
 
   const levelMap: Record<string, number> = { "Low": 1, "Medium": 2, "High": 3 };
@@ -180,15 +154,15 @@ export default function MyUnwindPage() {
                       </p>
                     )}
                   </div>
-                  <Link href="/predict" className="brutal-btn brutal-btn-primary w-full py-4 font-bold text-lg text-center">
-                    Re-run Prediction
+                  <Link href="/predict" className="brutal-btn brutal-btn-primary w-full py-4 font-mono font-bold text-lg text-center">
+                    [ RE-RUN.EXE ]
                   </Link>
                 </div>
               ) : (
                 <div className="text-center py-8 border-2 border-dashed border-ink rounded-[3px] flex flex-col items-center justify-center h-full">
                   <p className="font-bold mb-6">No predictions yet.</p>
-                  <Link href="/predict" className="brutal-btn brutal-btn-primary inline-block px-6 py-3 font-bold">
-                    Run your first prediction
+                  <Link href="/predict" className="brutal-btn brutal-btn-primary inline-block px-6 py-3 font-mono font-bold">
+                    [ INIT_PREDICTION.EXE ]
                   </Link>
                 </div>
               )}
@@ -317,7 +291,7 @@ export default function MyUnwindPage() {
                 <div className="relative z-10 flex flex-col h-full">
                   <div className="flex items-center justify-between mb-4">
                     <span className="font-mono text-xs uppercase font-bold tracking-wider text-muted-foreground">Active Habits</span>
-                    <Link href="/tips" className="text-xs font-bold hover:underline group inline-flex items-center gap-1">Edit plan <ArrowRight className="w-3 h-3 group-hover:translate-x-[2px] transition-transform" /></Link>
+                    <Link href="/tips" className="brutal-btn brutal-btn-ghost text-[10px] uppercase tracking-wider font-bold inline-flex items-center gap-1 px-2 py-1">EDIT PLAN <ArrowRight className="w-3 h-3 group-hover:translate-x-[2px] transition-transform" /></Link>
                   </div>
                   <div className="flex-1 space-y-4 overflow-y-auto pr-2 pb-2">
                     {plan.map((p, idx) => {
@@ -356,7 +330,7 @@ export default function MyUnwindPage() {
               ) : (
                 <div className="relative z-10 text-center py-8 border-2 border-dashed border-ink rounded-[3px] h-full flex flex-col items-center justify-center">
                   <p className="font-bold mb-6">You haven't picked any habits yet.</p>
-                  <Link href="/tips" className="brutal-btn brutal-btn-primary inline-block px-6 py-3 font-bold">
+                  <Link href="/tips" className="brutal-btn brutal-btn-ghost inline-block px-6 py-3 font-bold uppercase tracking-wider">
                     Build your plan
                   </Link>
                 </div>
@@ -402,8 +376,8 @@ export default function MyUnwindPage() {
                   </div>
                 )}
               </div>
-              <Link href="/breathe" className="brutal-btn bg-paper text-ink border-2 border-paper w-full py-3 font-bold text-lg inline-flex items-center justify-center gap-2 group mt-4">
-                Take a breather <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              <Link href="/breathe" className="brutal-btn bg-paper text-ink border-2 border-paper w-full py-3 font-mono font-bold text-lg inline-flex items-center justify-center gap-2 mt-4 hover:bg-frame">
+                [ BREATHE_MODULE.EXE ] <ArrowRight className="w-5 h-5 arrow-icon" />
               </Link>
             </Card>
           </section>

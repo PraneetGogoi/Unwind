@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ArrowRight, Loader2, Info } from "lucide-react";
+import { ArrowLeft, Save, Sparkles, RefreshCw, AlertTriangle, AlertCircle, TrendingUp, Cpu, X, Play, ArrowRight, Loader2, Info } from "lucide-react";
+import { getSetting, setSetting } from "@/lib/db";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -84,14 +85,14 @@ export default function PredictorPage() {
       setBaseFormData({...formData});
       setStatus("SHOW_RESULT");
       
-      const history = JSON.parse(localStorage.getItem("unwind_history") || "[]");
+      const history = await getSetting("unwind_history", []);
       history.push({
         timestamp: new Date().toISOString(),
         inputs: formData,
         result: fullData
       });
-      localStorage.setItem("unwind_history", JSON.stringify(history));
-      localStorage.setItem("unwind_latest_prediction", JSON.stringify({ inputs: formData, result: fullData }));
+      await setSetting("unwind_history", history);
+      await setSetting("unwind_latest_prediction", { inputs: formData, result: fullData });
     } catch (err) {
       console.error(err);
       alert("Failed to connect to the prediction API.");
@@ -254,12 +255,12 @@ export default function PredictorPage() {
                 <button
                   type="submit"
                   disabled={status === "LOADING"}
-                  className={`flex-1 brutal-btn brutal-btn-primary py-4 text-lg font-bold flex items-center justify-center gap-2 ${status === "LOADING" ? "brutal-btn-loading min-w-[200px]" : ""}`}
+                  className={`flex-1 brutal-btn brutal-btn-primary py-4 text-lg font-mono font-bold flex items-center justify-center gap-2 ${status === "LOADING" ? "brutal-btn-loading min-w-[200px]" : ""}`}
                 >
                   {status === "LOADING" ? (
-                    <Loader2 className="animate-spin" />
+                    <span className="loading-dots tracking-widest">[ RUNNING ]</span>
                   ) : (
-                    status === "SIMULATOR" ? "Reset to Baseline" : "Run Prediction"
+                    status === "SIMULATOR" ? "[ RESET_BASELINE.EXE ]" : "[ RUN_ANALYSIS.EXE ]"
                   )}
                   {status === "IDLE" || status === "SHOW_RESULT" ? (
                     <ArrowRight className="w-5 h-5 arrow-icon" />
@@ -269,9 +270,9 @@ export default function PredictorPage() {
                   <button
                     type="button"
                     onClick={() => setStatus("SIMULATOR")}
-                    className={`flex-1 brutal-btn py-4 text-lg font-bold flex items-center justify-center gap-2 ${status === "SIMULATOR" ? "bg-ink text-paper" : "bg-paper"} border-2 border-ink`}
+                    className={`flex-1 brutal-btn ${status === "SIMULATOR" ? "bg-ink text-paper" : "brutal-btn-ghost"} py-4 text-lg font-mono font-bold flex items-center justify-center gap-2`}
                   >
-                    What-If Simulator
+                    [ WHAT_IF_SIMULATOR ]
                     <ArrowRight className="w-5 h-5 arrow-icon" />
                   </button>
                 )}

@@ -3,29 +3,25 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowUpRight, ArrowRight, CheckCircle2, Activity, Brain, Wind } from "lucide-react";
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "@/lib/db";
 
 export default function LandingPage() {
   const [hasData, setHasData] = useState(false);
   const [prediction, setPrediction] = useState<string | null>(null);
-  const [streak, setStreak] = useState(0);
-  const [plan, setPlan] = useState<any[]>([]);
+  const latestPrediction = useLiveQuery(() => db.settings.get("unwind_latest_prediction"))?.value;
+  const streak = useLiveQuery(() => db.settings.get("unwind_streak"))?.value || 0;
+  const plan = useLiveQuery(() => db.settings.get("unwind_plan"))?.value || [];
 
   useEffect(() => {
-    const latestPrediction = JSON.parse(localStorage.getItem("unwind_latest_prediction") || "null");
     if (latestPrediction) {
       setHasData(true);
-      setPrediction(latestPrediction.result.prediction);
+      setPrediction(latestPrediction.result?.prediction || null);
     }
-    
-    const savedStreak = parseInt(localStorage.getItem("unwind_streak") || "0", 10);
-    setStreak(savedStreak);
-    
-    const savedPlan = JSON.parse(localStorage.getItem("unwind_plan") || "[]");
-    if (savedPlan.length > 0) {
-      setPlan(savedPlan);
-      setHasData(true); // they have a plan even if prediction was lost
+    if (plan.length > 0) {
+      setHasData(true);
     }
-  }, []);
+  }, [latestPrediction, plan]);
 
   return (
     <div className="min-h-screen bg-dots-bg text-ink selection:bg-ink selection:text-paper overflow-hidden">
@@ -101,15 +97,15 @@ export default function LandingPage() {
             <div className="mt-12 flex flex-wrap gap-4">
               <Link
                 href="/predict"
-                className="brutal-btn brutal-btn-primary inline-block px-8 py-4 font-bold text-lg shadow-hard hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all"
+                className="brutal-btn brutal-btn-primary inline-block px-8 py-4 font-mono font-bold text-lg"
               >
-                Predict My Risk
+                [ PREDICT_RISK.EXE ]
               </Link>
               <Link
                 href="/dashboard"
-                className="inline-block px-8 py-4 font-bold text-lg bg-paper border-2 border-ink shadow-hard-sm hover:bg-frame transition-colors"
+                className="brutal-btn brutal-btn-ghost inline-block px-8 py-4 font-bold text-lg"
               >
-                Explore Dashboard
+                [ EXPLORE_DASHBOARD ]
               </Link>
             </div>
           </div>

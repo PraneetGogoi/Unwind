@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "@/lib/db";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Activity, Moon, Sun, Menu, X, Command } from "lucide-react";
@@ -39,9 +41,6 @@ export function Header() {
   const { theme, toggle } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [riskLevel, setRiskLevel] = useState<string | null>(null);
-  const [riskTimestamp, setRiskTimestamp] = useState<string | null>(null);
-
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
@@ -49,17 +48,12 @@ export function Header() {
     window.addEventListener("scroll", handleScroll);
     handleScroll();
 
-    // Check risk level
-    const latestPrediction = JSON.parse(localStorage.getItem("unwind_latest_prediction") || "null");
-    if (latestPrediction) {
-      setRiskLevel(latestPrediction.result.prediction);
-      if (latestPrediction.timestamp) {
-        setRiskTimestamp(formatDistanceToNow(new Date(latestPrediction.timestamp), { addSuffix: true }));
-      }
-    }
-
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const latestPrediction = useLiveQuery(() => db.settings.get("unwind_latest_prediction"))?.value;
+  const riskLevel = latestPrediction?.result?.prediction || null;
+  const riskTimestamp = latestPrediction?.timestamp ? formatDistanceToNow(new Date(latestPrediction.timestamp), { addSuffix: true }) : null;
 
   const getRiskColor = () => {
     if (riskLevel === "Low") return "bg-low";
@@ -159,7 +153,7 @@ export function Header() {
           <div className="hidden md:flex items-center gap-3">
             <button
               onClick={() => window.dispatchEvent(new CustomEvent('unwind-toggle-cmdk'))}
-              className="flex items-center gap-2 px-3 py-2 bg-paper border-2 border-ink shadow-hard-sm hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all rounded-[3px] font-mono text-xs font-bold text-muted-foreground focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-2"
+              className="brutal-btn brutal-btn-ghost flex items-center gap-2 px-3 py-2 font-mono text-xs font-bold text-muted-foreground"
               aria-label="Open Command Palette"
             >
               <Command className="w-4 h-4 text-ink" />
@@ -168,7 +162,7 @@ export function Header() {
             <button
               onClick={toggle}
               aria-label="Toggle theme"
-              className="flex items-center justify-center w-9 h-9 bg-paper border-2 border-ink shadow-hard-sm hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all rounded-[3px] focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-2"
+              className="brutal-btn brutal-btn-icon bg-paper w-10 h-10"
             >
               {theme === "dark" ? (
                 <Sun className="w-4 h-4 text-ink" />
@@ -182,13 +176,13 @@ export function Header() {
           <div className="md:hidden flex items-center gap-2">
             <button
               onClick={() => window.dispatchEvent(new CustomEvent('unwind-toggle-cmdk'))}
-              className="flex items-center justify-center w-9 h-9 border-2 border-ink bg-paper shadow-hard-sm rounded-[3px] focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-2"
+              className="brutal-btn brutal-btn-icon bg-paper w-10 h-10"
               aria-label="Open Command Palette"
             >
               <Command className="w-4 h-4 text-ink" />
             </button>
             <button
-              className="flex items-center justify-center w-9 h-9 border-2 border-ink bg-paper shadow-hard-sm rounded-[3px] focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-2"
+              className="brutal-btn brutal-btn-icon bg-paper w-10 h-10"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label="Toggle menu"
             >

@@ -6,6 +6,8 @@ import Link from "next/link";
 import { ArrowRight, Activity, AlertCircle } from "lucide-react";
 import * as Tabs from "@radix-ui/react-tabs";
 import { getSignalAveragesChart, getBoxPlotChart, getSegmentChart, getRadarChart, getCorrelationHeatmap } from "@/lib/charts";
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "@/lib/db";
 import { useTheme } from "@/components/theme-provider";
 
 const PlotlyChart = dynamic(
@@ -93,21 +95,9 @@ function getStressPercentile(stress: number) {
 
 export default function DashboardPage() {
   const { theme } = useTheme();
-  const [predictionData, setPredictionData] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("you-vs-data");
-
   const fontColor = theme === "dark" ? "#fdfbf7" : "#1a365d";
-
-  useEffect(() => {
-    const saved = localStorage.getItem("unwind_latest_prediction");
-    if (saved) {
-      try {
-        setPredictionData(JSON.parse(saved));
-      } catch (e) {
-        console.error("Failed to parse prediction", e);
-      }
-    }
-  }, []);
+  const predictionData = useLiveQuery(() => db.settings.get("unwind_latest_prediction"))?.value;
 
   const userMetrics = predictionData?.inputs;
   const prediction = predictionData?.result?.prediction;
