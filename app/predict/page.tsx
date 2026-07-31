@@ -85,7 +85,7 @@ export default function PredictorPage() {
       setBaseFormData({...formData});
       setStatus("SHOW_RESULT");
       
-      const history = await getSetting("unwind_history", []);
+      const history = await getSetting<any[]>("unwind_history", []);
       history.push({
         timestamp: new Date().toISOString(),
         inputs: formData,

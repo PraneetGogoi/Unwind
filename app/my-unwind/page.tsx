@@ -65,7 +65,7 @@ export default function MyUnwindPage() {
   };
 
   const handleReflectHabit = async (title: string, status: "Yes" | "Kinda" | "No") => {
-    const historyLog = await getSetting("unwind_habit_history", []);
+    const historyLog = await getSetting<any[]>("unwind_habit_history", []);
     historyLog.push({
       title,
       status,
@@ -81,12 +81,12 @@ export default function MyUnwindPage() {
   
   const trendData = history.length > 0 ? [
     {
-      x: history.map(h => h.timestamp),
-      y: history.map(h => levelMap[h.result.burnout_level] || 2),
+      x: history.map((h: any) => h.timestamp),
+      y: history.map((h: any) => levelMap[h.result.burnout_level] || 2),
       type: "scatter",
       mode: "lines+markers",
       line: { color: "var(--ink)", width: 3, shape: "spline" },
-      marker: { size: 10, color: history.map(h => {
+      marker: { size: 10, color: history.map((h: any) => {
         if (h.result.burnout_level === "High") return "var(--high)";
         if (h.result.burnout_level === "Medium") return "var(--medium)";
         return "var(--low)";
@@ -221,7 +221,7 @@ export default function MyUnwindPage() {
                       {Array.from({ length: Math.max(0, 7 - checkIns.length) }).map((_, i) => (
                         <div key={`empty-${i}`} className="w-8 h-8 border-2 border-dashed border-ink opacity-30"></div>
                       ))}
-                      {checkIns.slice(-7).map((c, i) => (
+                      {checkIns.slice(-7).map((c: any, i: number) => (
                         <div key={i} className="w-8 h-8 bg-ink border-2 border-ink" title={new Date(c.date).toLocaleDateString()}></div>
                       ))}
                     </div>
@@ -294,7 +294,7 @@ export default function MyUnwindPage() {
                     <Link href="/tips" className="brutal-btn brutal-btn-ghost text-[10px] uppercase tracking-wider font-bold inline-flex items-center gap-1 px-2 py-1">EDIT PLAN <ArrowRight className="w-3 h-3 group-hover:translate-x-[2px] transition-transform" /></Link>
                   </div>
                   <div className="flex-1 space-y-4 overflow-y-auto pr-2 pb-2">
-                    {plan.map((p, idx) => {
+                    {plan.map((p: any, idx: number) => {
                       const hState = habitsState[p.title] || { streak: 0, last_completed: "" };
                       const doneToday = hState.last_completed === new Date().toDateString();
                       return (

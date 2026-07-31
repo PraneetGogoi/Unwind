@@ -170,7 +170,7 @@ export default function TipsPage() {
       });
       const downrankedTitles = Object.keys(noCounts).filter(t => noCounts[t] >= 2);
 
-      const latestPrediction = await getSetting("unwind_latest_prediction", null);
+      const latestPrediction = await getSetting<any>("unwind_latest_prediction", null);
       if (latestPrediction && latestPrediction.inputs && latestPrediction.result) {
         setPersonalData(latestPrediction.inputs);
         const topDrivers = latestPrediction.result.top_drivers || [];
