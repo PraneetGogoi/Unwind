@@ -107,7 +107,7 @@ export default function MyUnwindPage() {
   
   const trendData = history.length > 0 ? [
     {
-      x: history.map((h, i) => new Date(h.timestamp).toLocaleDateString() + ` (${i+1})`),
+      x: history.map(h => h.timestamp),
       y: history.map(h => levelMap[h.result.burnout_level] || 2),
       type: "scatter",
       mode: "lines+markers",
@@ -197,13 +197,13 @@ export default function MyUnwindPage() {
 
           <section>
             <h2 className="font-display text-2xl mb-4">Risk Trend</h2>
-            <Card className="p-6 h-72 flex flex-col">
+            <Card className="p-6 h-72 flex flex-col overflow-hidden">
               {history.length > 0 ? (
                 <div className="h-full w-full">
                   <PlotlyChart 
                     data={trendData as any}
                     layout={{
-                      margin: { t: 20, r: 20, b: 40, l: 40 },
+                      margin: { t: 20, r: 20, b: 60, l: 40 },
                       paper_bgcolor: "transparent",
                       plot_bgcolor: "transparent",
                       yaxis: { 
@@ -312,14 +312,14 @@ export default function MyUnwindPage() {
 
           <section>
             <h2 className="font-display text-2xl mb-4">Weekly Plan</h2>
-            <Card className="p-6 relative overflow-hidden h-full min-h-[300px]">
+            <Card className="p-6 relative overflow-hidden h-72">
               {plan.length > 0 ? (
                 <div className="relative z-10 flex flex-col h-full">
                   <div className="flex items-center justify-between mb-4">
                     <span className="font-mono text-xs uppercase font-bold tracking-wider text-muted-foreground">Active Habits</span>
                     <Link href="/tips" className="text-xs font-bold hover:underline group inline-flex items-center gap-1">Edit plan <ArrowRight className="w-3 h-3 group-hover:translate-x-[2px] transition-transform" /></Link>
                   </div>
-                  <div className="flex-1 space-y-4">
+                  <div className="flex-1 space-y-4 overflow-y-auto pr-2 pb-2">
                     {plan.map((p, idx) => {
                       const hState = habitsState[p.title] || { streak: 0, last_completed: "" };
                       const doneToday = hState.last_completed === new Date().toDateString();
