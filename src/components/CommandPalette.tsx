@@ -17,8 +17,14 @@ export function CommandPalette() {
       }
     };
 
+    const toggleEvent = () => setOpen((open) => !open);
+
     document.addEventListener("keydown", down);
-    return () => document.removeEventListener("keydown", down);
+    window.addEventListener("unwind-toggle-cmdk", toggleEvent);
+    return () => {
+      document.removeEventListener("keydown", down);
+      window.removeEventListener("unwind-toggle-cmdk", toggleEvent);
+    };
   }, []);
 
   const runCommand = (command: () => void) => {
@@ -47,7 +53,7 @@ export function CommandPalette() {
             />
             <button 
               onClick={() => setOpen(false)}
-              className="p-1 hover:bg-ink/10 rounded-[3px] transition-colors"
+              className="p-1 hover:bg-ink/10 rounded-[3px] transition-colors focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-2"
             >
               <X className="w-5 h-5 text-ink" />
             </button>

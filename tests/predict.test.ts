@@ -5,9 +5,9 @@ import { getSignalAveragesChart } from "../src/lib/charts";
 vi.mock("../src/lib/chart_data.json", () => ({
   default: {
     signal_averages: {
-      Low: { stress_level: 20, sleep_hours: 8, daily_work_hours: 7 },
-      Medium: { stress_level: 50, sleep_hours: 7, daily_work_hours: 8 },
-      High: { stress_level: 80, sleep_hours: 5, daily_work_hours: 10 },
+      Low: { cognitive_load: 1, sleep_hours: 8, daily_work_hours: 7 },
+      Medium: { cognitive_load: 3, sleep_hours: 7, daily_work_hours: 8 },
+      High: { cognitive_load: 5, sleep_hours: 5, daily_work_hours: 10 },
     },
   },
 }));
@@ -23,7 +23,7 @@ describe("Charts Logic", () => {
 
   it("should append user metrics as a scatter plot if provided", () => {
     const userMetrics = {
-      stress_level: 60,
+      cognitive_load: 4,
       sleep_hours: 6,
       daily_work_hours: 9,
     };
@@ -33,7 +33,7 @@ describe("Charts Logic", () => {
     const userSeries = chart.data[3];
     expect(userSeries.name).toBe("You");
     expect(userSeries.type).toBe("scatter");
-    expect(userSeries.y).toEqual([60, 6, 9]);
+    expect(userSeries.y).toEqual([4, 6, 9]);
     expect(userSeries.marker.symbol).toBe("star");
   });
 });

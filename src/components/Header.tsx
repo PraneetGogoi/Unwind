@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Activity, Moon, Sun, Menu, X, Command } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { motion } from "framer-motion";
+import { formatDistanceToNow } from "date-fns";
 
 const NAV_GROUPS = [
   {
@@ -39,6 +40,7 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [riskLevel, setRiskLevel] = useState<string | null>(null);
+  const [riskTimestamp, setRiskTimestamp] = useState<string | null>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -51,6 +53,9 @@ export function Header() {
     const latestPrediction = JSON.parse(localStorage.getItem("unwind_latest_prediction") || "null");
     if (latestPrediction) {
       setRiskLevel(latestPrediction.result.prediction);
+      if (latestPrediction.timestamp) {
+        setRiskTimestamp(formatDistanceToNow(new Date(latestPrediction.timestamp), { addSuffix: true }));
+      }
     }
 
     return () => window.removeEventListener("scroll", handleScroll);
@@ -110,7 +115,7 @@ export function Header() {
             {NAV_GROUPS.map((group, groupIdx) => (
               <div key={group.label} className="flex items-center gap-1">
                 {group.routes.map((route) => {
-                  const isActive = pathname === route.path;
+                  const isActive = pathname === route.path || (route.path !== '/' && pathname.startsWith(route.path));
                   const isMyUnwind = route.name === "My Unwind";
                   
                   return (
@@ -118,7 +123,7 @@ export function Header() {
                       key={route.path}
                       href={route.path}
                       aria-current={isActive ? "page" : undefined}
-                      className={`relative px-4 py-2 rounded-[3px] transition-colors text-sm uppercase tracking-wide font-mono ${
+                      className={`relative px-4 py-2 rounded-[3px] transition-colors text-sm uppercase tracking-wide font-mono focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-2 ${
                         isActive ? "text-paper" : "text-ink hover:bg-ink/10"
                       }`}
                     >
@@ -135,7 +140,7 @@ export function Header() {
                         {isMyUnwind && riskLevel && (
                           <span 
                             className={`w-2 h-2 rounded-full ${getRiskColor()} ${isActive ? 'border border-paper' : ''}`}
-                            title={`Current Risk: ${riskLevel}`}
+                            title={`${riskLevel} risk ${riskTimestamp ? `— updated ${riskTimestamp}` : ''}`}
                           />
                         )}
                       </span>
@@ -153,8 +158,8 @@ export function Header() {
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-3">
             <button
-              onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}
-              className="flex items-center gap-2 px-3 py-2 bg-paper border-2 border-ink shadow-hard-sm hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all rounded-[3px] font-mono text-xs font-bold text-muted-foreground"
+              onClick={() => window.dispatchEvent(new CustomEvent('unwind-toggle-cmdk'))}
+              className="flex items-center gap-2 px-3 py-2 bg-paper border-2 border-ink shadow-hard-sm hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all rounded-[3px] font-mono text-xs font-bold text-muted-foreground focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-2"
               aria-label="Open Command Palette"
             >
               <Command className="w-4 h-4 text-ink" />
@@ -163,7 +168,7 @@ export function Header() {
             <button
               onClick={toggle}
               aria-label="Toggle theme"
-              className="flex items-center justify-center w-9 h-9 bg-paper border-2 border-ink shadow-hard-sm hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all rounded-[3px]"
+              className="flex items-center justify-center w-9 h-9 bg-paper border-2 border-ink shadow-hard-sm hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all rounded-[3px] focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-2"
             >
               {theme === "dark" ? (
                 <Sun className="w-4 h-4 text-ink" />
@@ -176,14 +181,14 @@ export function Header() {
           {/* Mobile Menu Toggle */}
           <div className="md:hidden flex items-center gap-2">
             <button
-              onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}
-              className="flex items-center justify-center w-9 h-9 border-2 border-ink bg-paper shadow-hard-sm"
+              onClick={() => window.dispatchEvent(new CustomEvent('unwind-toggle-cmdk'))}
+              className="flex items-center justify-center w-9 h-9 border-2 border-ink bg-paper shadow-hard-sm rounded-[3px] focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-2"
               aria-label="Open Command Palette"
             >
               <Command className="w-4 h-4 text-ink" />
             </button>
             <button
-              className="flex items-center justify-center w-9 h-9 border-2 border-ink bg-paper shadow-hard-sm"
+              className="flex items-center justify-center w-9 h-9 border-2 border-ink bg-paper shadow-hard-sm rounded-[3px] focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-2"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label="Toggle menu"
             >
@@ -201,7 +206,7 @@ export function Header() {
           <div className="md:hidden absolute top-full left-0 w-full bg-frame border-b-2 border-ink shadow-hard flex flex-col z-50">
             <nav className="flex flex-col p-4 gap-2 max-h-[80vh] overflow-y-auto">
               {ALL_ROUTES.map((route) => {
-                const isActive = pathname === route.path;
+                const isActive = pathname === route.path || (route.path !== '/' && pathname.startsWith(route.path));
                 const isMyUnwind = route.name === "My Unwind";
                 return (
                   <Link
@@ -209,7 +214,7 @@ export function Header() {
                     href={route.path}
                     aria-current={isActive ? "page" : undefined}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`p-4 flex items-center justify-between font-mono uppercase font-bold text-sm border-2 rounded-[3px] transition-all ${
+                    className={`p-4 flex items-center justify-between font-mono uppercase font-bold text-sm border-2 rounded-[3px] transition-all focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-2 ${
                       isActive
                         ? "bg-ink text-paper border-ink"
                         : "bg-paper text-ink border-ink shadow-hard-sm active:translate-y-1 active:translate-x-1 active:shadow-none"
@@ -219,7 +224,7 @@ export function Header() {
                     {isMyUnwind && riskLevel && (
                       <span 
                         className={`w-3 h-3 rounded-full ${getRiskColor()} ${isActive ? 'border-2 border-paper' : ''}`}
-                        title={`Current Risk: ${riskLevel}`}
+                        title={`${riskLevel} risk ${riskTimestamp ? `— updated ${riskTimestamp}` : ''}`}
                       />
                     )}
                   </Link>
@@ -230,7 +235,7 @@ export function Header() {
                   toggle();
                   setMobileMenuOpen(false);
                 }}
-                className="p-4 mt-4 flex items-center justify-center gap-2 font-mono uppercase font-bold text-sm border-2 border-ink bg-paper shadow-hard-sm rounded-[3px] text-ink"
+                className="p-4 mt-4 flex items-center justify-center gap-2 font-mono uppercase font-bold text-sm border-2 border-ink bg-paper shadow-hard-sm rounded-[3px] text-ink focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-2"
               >
                 {theme === "dark" ? (
                   <>
