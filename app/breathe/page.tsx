@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import { ArrowRight, Volume2, VolumeX } from "lucide-react";
+import { ArrowRight, Volume2, VolumeX, Pause, Play, Settings2 } from "lucide-react";
 import { motion, useAnimation } from "framer-motion";
 
-type PatternType = "4-7-8" | "box" | "sigh";
+type PatternType = "4-7-8" | "box" | "sigh" | "custom";
 type Phase = "IDLE" | "INHALE" | "HOLD" | "EXHALE" | "HOLD_EMPTY" | "DONE";
 
 interface Pattern {
@@ -16,7 +16,7 @@ interface Pattern {
   rounds: number;
 }
 
-const PATTERNS: Record<PatternType, Pattern> = {
+const DEFAULT_PATTERNS: Record<Exclude<PatternType, "custom">, Pattern> = {
   "4-7-8": {
     id: "4-7-8",
     name: "4-7-8 Wind Down",
@@ -56,16 +56,50 @@ const PATTERNS: Record<PatternType, Pattern> = {
 
 export default function BreathePage() {
   const [patternId, setPatternId] = useState<PatternType>("4-7-8");
-  const pattern = PATTERNS[patternId];
+  
+  // Custom Pattern State
+  const [customInhale, setCustomInhale] = useState(4);
+  const [customHold, setCustomHold] = useState(4);
+  const [customExhale, setCustomExhale] = useState(4);
+  const [customHoldEmpty, setCustomHoldEmpty] = useState(4);
+  const [customRounds, setCustomRounds] = useState(4);
+  
+  const getPattern = (): Pattern => {
+    if (patternId === "custom") {
+      const phases: { phase: Phase; duration: number }[] = [];
+      if (customInhale > 0) phases.push({ phase: "INHALE", duration: customInhale });
+      if (customHold > 0) phases.push({ phase: "HOLD", duration: customHold });
+      if (customExhale > 0) phases.push({ phase: "EXHALE", duration: customExhale });
+      if (customHoldEmpty > 0) phases.push({ phase: "HOLD_EMPTY", duration: customHoldEmpty });
+      
+      return {
+        id: "custom",
+        name: "Custom Pattern",
+        description: "Your personalized breathing rhythm.",
+        rounds: customRounds,
+        phases
+      };
+    }
+    return DEFAULT_PATTERNS[patternId];
+  };
+
+  const pattern = getPattern();
   
   const [activePhaseName, setActivePhaseName] = useState<Phase>("IDLE");
   const [round, setRound] = useState(1);
   const [timeLeft, setTimeLeft] = useState(0);
+  const [phaseTotalTime, setPhaseTotalTime] = useState(1);
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   
   const orbControls = useAnimation();
-  const sessionRef = useRef<{ active: boolean; timerId: NodeJS.Timeout | null }>({ active: false, timerId: null });
+  const sessionRef = useRef<{ active: boolean; paused: boolean; timerId: NodeJS.Timeout | null }>({ active: false, paused: false, timerId: null });
+
+  // Update ref when state changes
+  useEffect(() => {
+    sessionRef.current.paused = isPaused;
+  }, [isPaused]);
 
   // Audio Context Ref
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -80,7 +114,7 @@ export default function BreathePage() {
   }, []);
 
   const playTone = useCallback((phase: Phase) => {
-    if (!soundEnabled) return;
+    if (!soundEnabled || sessionRef.current.paused) return;
     try {
       if (!audioCtxRef.current) {
         audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -88,48 +122,90 @@ export default function BreathePage() {
       const ctx = audioCtxRef.current;
       if (ctx.state === "suspended") ctx.resume();
       
-      const osc = ctx.createOscillator();
+      // Ambient Singing Bowl style
+      const osc1 = ctx.createOscillator();
+      const osc2 = ctx.createOscillator();
       const gainNode = ctx.createGain();
+      const filter = ctx.createBiquadFilter();
       
-      osc.type = "sine";
+      osc1.type = "sine";
+      osc2.type = "triangle";
       
-      if (phase === "INHALE") {
-          osc.frequency.setValueAtTime(220, ctx.currentTime);
-          osc.frequency.exponentialRampToValueAtTime(330, ctx.currentTime + 1.0);
-      } else if (phase === "EXHALE") {
-          osc.frequency.setValueAtTime(330, ctx.currentTime);
-          osc.frequency.exponentialRampToValueAtTime(165, ctx.currentTime + 1.0);
-      } else {
-          osc.frequency.setValueAtTime(220, ctx.currentTime);
-      }
+      filter.type = "lowpass";
+      filter.Q.value = 1;
+      
+      const baseFreq = phase === "INHALE" ? 220 : phase === "EXHALE" ? 180 : 200;
+      const endFreq = phase === "INHALE" ? 330 : phase === "EXHALE" ? 140 : 200;
+      
+      osc1.frequency.setValueAtTime(baseFreq, ctx.currentTime);
+      osc1.frequency.exponentialRampToValueAtTime(endFreq, ctx.currentTime + 1.0);
+      
+      osc2.frequency.setValueAtTime(baseFreq * 1.01, ctx.currentTime); // slight detune
+      osc2.frequency.exponentialRampToValueAtTime(endFreq * 1.01, ctx.currentTime + 1.0);
+      
+      filter.frequency.setValueAtTime(400, ctx.currentTime);
+      filter.frequency.linearRampToValueAtTime(800, ctx.currentTime + 1.0);
       
       gainNode.gain.setValueAtTime(0, ctx.currentTime);
-      gainNode.gain.linearRampToValueAtTime(0.1, ctx.currentTime + 0.1);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.0);
+      gainNode.gain.linearRampToValueAtTime(0.15, ctx.currentTime + 0.3);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.5);
       
-      osc.connect(gainNode);
+      osc1.connect(filter);
+      osc2.connect(filter);
+      filter.connect(gainNode);
       gainNode.connect(ctx.destination);
       
-      osc.start();
-      osc.stop(ctx.currentTime + 1.0);
+      osc1.start();
+      osc2.start();
+      osc1.stop(ctx.currentTime + 1.5);
+      osc2.stop(ctx.currentTime + 1.5);
     } catch (e) {
       console.warn("Audio not supported or blocked");
     }
   }, [soundEnabled]);
 
-  const triggerHaptic = useCallback(() => {
+  const triggerHaptic = useCallback((type: "tick" | "phase") => {
     if (soundEnabled && typeof navigator !== "undefined" && navigator.vibrate) {
-      navigator.vibrate(50); // Short pulse
+      if (type === "phase") navigator.vibrate([50, 50, 50]);
+      else navigator.vibrate(20);
     }
   }, [soundEnabled]);
 
+  const animateOrb = (phase: Phase, duration: number, isResuming = false) => {
+    if (prefersReducedMotion) return;
+    
+    let targetScale = 1;
+    let targetOpacity = 0.6;
+    let ease: "linear" | "easeOut" | "easeInOut" = "linear";
+    
+    if (phase === "INHALE") {
+       targetScale = 1.0; 
+       ease = "easeOut";
+    } else if (phase === "EXHALE") {
+       targetScale = 0.5;
+       targetOpacity = 0.4;
+       ease = "easeInOut";
+    } else if (phase === "HOLD") {
+       targetScale = 1.0;
+    } else {
+       targetScale = 0.5;
+       targetOpacity = 0.2;
+    }
+    
+    orbControls.start({
+      scale: targetScale,
+      opacity: targetOpacity,
+      transition: { duration, ease }
+    });
+  };
+
   const startSession = async () => {
     sessionRef.current.active = true;
+    sessionRef.current.paused = false;
+    setIsPaused(false);
     
-    // Quick haptic/tone to signify start
-    triggerHaptic();
-    playTone("INHALE");
-
+    triggerHaptic("phase");
+    
     for (let r = 1; r <= pattern.rounds; r++) {
       if (!sessionRef.current.active) break;
       setRound(r);
@@ -139,42 +215,37 @@ export default function BreathePage() {
         
         setActivePhaseName(p.phase);
         setTimeLeft(p.duration);
-        playTone(p.phase);
-        triggerHaptic();
+        setPhaseTotalTime(p.duration);
         
-        // Start animation visually
-        if (!prefersReducedMotion) {
-           let targetScale = 1;
-           let targetOpacity = 0.6;
-           let ease: "linear" | "easeOut" | "easeInOut" = "linear";
-           
-           if (p.phase === "INHALE") {
-              targetScale = 1.0; 
-              ease = "easeOut";
-           } else if (p.phase === "EXHALE") {
-              targetScale = 0.5;
-              targetOpacity = 0.4;
-              ease = "easeInOut";
-           } else if (p.phase === "HOLD") {
-              targetScale = 1.0;
-           } else {
-              targetScale = 0.5;
-              targetOpacity = 0.2;
-           }
-           
-           orbControls.start({
-             scale: targetScale,
-             opacity: targetOpacity,
-             transition: { duration: p.duration, ease }
-           });
+        if (!sessionRef.current.paused) {
+          playTone(p.phase);
+          triggerHaptic("phase");
+          animateOrb(p.phase, p.duration);
         }
         
-        // Countdown timer loop for the exact duration of the phase
+        // Timer Loop
         await new Promise<void>((resolve) => {
           let currentTick = p.duration;
+          let wasPaused = false;
           
           sessionRef.current.timerId = setInterval(() => {
+            if (sessionRef.current.paused) {
+              if (!wasPaused) {
+                orbControls.stop(); // Stop animation on pause
+                wasPaused = true;
+              }
+              return; // Skip tick
+            }
+            
+            if (wasPaused) {
+              // Resumed
+              animateOrb(p.phase, currentTick, true);
+              wasPaused = false;
+            }
+
             currentTick -= 1;
+            triggerHaptic("tick");
+            
             if (currentTick <= 0) {
               if (sessionRef.current.timerId) clearInterval(sessionRef.current.timerId);
               setTimeLeft(0);
@@ -198,8 +269,14 @@ export default function BreathePage() {
     sessionRef.current.active = false;
     if (sessionRef.current.timerId) clearInterval(sessionRef.current.timerId);
     setActivePhaseName("IDLE");
+    setIsPaused(false);
     orbControls.stop();
     orbControls.set({ scale: 0.5, opacity: 0.2 });
+  };
+  
+  const togglePause = (e?: React.MouseEvent) => {
+    e?.stopPropagation(); // Prevent triggering startSession if clicking orb
+    setIsPaused(p => !p);
   };
 
   // Clean up timer on unmount
@@ -216,6 +293,7 @@ export default function BreathePage() {
   const getPhaseLabel = () => {
     if (isIdle) return "Start";
     if (isDone) return "Done";
+    if (isPaused) return "Paused";
     if (activePhaseName === "INHALE") return "Inhale...";
     if (activePhaseName === "HOLD") return "Hold...";
     if (activePhaseName === "EXHALE") return "Exhale...";
@@ -229,6 +307,11 @@ export default function BreathePage() {
       orbControls.set({ scale: 0.5, opacity: 0.2 });
     }
   }, [isIdle, orbControls]);
+  
+  // Calculate stroke dash offset for the SVG ring
+  const ringCircumference = 2 * Math.PI * 136; // r=136 for a 272px box
+  const ringProgress = isIdle || isDone ? 1 : (timeLeft / phaseTotalTime);
+  const strokeDashoffset = ringCircumference * (1 - ringProgress);
 
   return (
     <div className={`flex-1 bg-dots-bg text-ink selection:bg-ink selection:text-paper flex flex-col transition-colors duration-1000 ${
@@ -239,7 +322,7 @@ export default function BreathePage() {
       <div className="absolute top-24 right-4 md:right-8 z-50 flex items-center gap-4">
         <button 
           onClick={() => setSoundEnabled(!soundEnabled)}
-          className="p-3 brutal-border bg-paper rounded-full hover:bg-frame transition-colors"
+          className="p-3 brutal-border bg-paper rounded-full hover:bg-frame transition-colors focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-2"
           title="Toggle Sound & Haptics"
         >
           {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5 opacity-50" />}
@@ -263,22 +346,49 @@ export default function BreathePage() {
         ) : (
           <>
             {isIdle && (
-              <div className="mb-12 flex flex-col items-center gap-4 animate-in fade-in slide-in-from-top-4">
-                <div className="flex bg-frame brutal-border p-1 gap-1">
-                  {(Object.keys(PATTERNS) as PatternType[]).map(key => (
+              <div className="mb-8 flex flex-col items-center gap-4 animate-in fade-in slide-in-from-top-4 w-full">
+                <div className="flex flex-wrap justify-center bg-frame brutal-border p-1 gap-1">
+                  {(Object.keys(DEFAULT_PATTERNS) as Array<Exclude<PatternType, "custom">>).map(key => (
                     <button
                       key={key}
-                      onClick={() => {
-                        setPatternId(key);
-                        // Reset orb animation for the new pattern
-                        orbControls.set({ scale: 0.5, opacity: 0.2 });
-                      }}
-                      className={`px-4 py-2 font-bold text-sm transition-colors ${patternId === key ? 'bg-ink text-paper' : 'hover:bg-paper'}`}
+                      onClick={() => setPatternId(key)}
+                      className={`px-4 py-2 font-bold text-sm transition-colors focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-2 ${patternId === key ? 'bg-ink text-paper' : 'hover:bg-paper'}`}
                     >
-                      {PATTERNS[key].name}
+                      {DEFAULT_PATTERNS[key].name}
                     </button>
                   ))}
+                  <button
+                      onClick={() => setPatternId("custom")}
+                      className={`px-4 py-2 font-bold text-sm transition-colors flex items-center gap-2 focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-2 ${patternId === "custom" ? 'bg-ink text-paper' : 'hover:bg-paper'}`}
+                    >
+                      <Settings2 className="w-4 h-4" /> Custom
+                  </button>
                 </div>
+                
+                {patternId === "custom" && (
+                  <div className="w-full max-w-sm mt-4 p-6 bg-paper brutal-border shadow-hard-sm text-left grid grid-cols-2 gap-4">
+                     <div>
+                       <label className="text-xs font-mono font-bold uppercase block mb-1">Inhale ({customInhale}s)</label>
+                       <input type="range" min="0" max="10" value={customInhale} onChange={e => setCustomInhale(parseInt(e.target.value))} className="w-full brutal-slider" />
+                     </div>
+                     <div>
+                       <label className="text-xs font-mono font-bold uppercase block mb-1">Hold ({customHold}s)</label>
+                       <input type="range" min="0" max="10" value={customHold} onChange={e => setCustomHold(parseInt(e.target.value))} className="w-full brutal-slider" />
+                     </div>
+                     <div>
+                       <label className="text-xs font-mono font-bold uppercase block mb-1">Exhale ({customExhale}s)</label>
+                       <input type="range" min="0" max="10" value={customExhale} onChange={e => setCustomExhale(parseInt(e.target.value))} className="w-full brutal-slider" />
+                     </div>
+                     <div>
+                       <label className="text-xs font-mono font-bold uppercase block mb-1">Hold ({customHoldEmpty}s)</label>
+                       <input type="range" min="0" max="10" value={customHoldEmpty} onChange={e => setCustomHoldEmpty(parseInt(e.target.value))} className="w-full brutal-slider" />
+                     </div>
+                     <div className="col-span-2 mt-2">
+                       <label className="text-xs font-mono font-bold uppercase block mb-1">Rounds ({customRounds})</label>
+                       <input type="range" min="1" max="10" value={customRounds} onChange={e => setCustomRounds(parseInt(e.target.value))} className="w-full brutal-slider" />
+                     </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -294,37 +404,76 @@ export default function BreathePage() {
                 : `Round ${round} of ${pattern.rounds}`}
             </p>
 
-            <button
-              onClick={isIdle ? startSession : undefined}
-              className={`w-72 h-72 rounded-full border-4 border-ink bg-paper shadow-hard flex items-center justify-center relative overflow-hidden ${isIdle ? "cursor-pointer hover:shadow-hard-hover active:translate-y-1 active:translate-x-1 active:shadow-none transition-all" : "cursor-default"}`}
-            >
-              {/* The animating background orb */}
-              {!prefersReducedMotion ? (
-                 <motion.div
-                   className="absolute inset-0 bg-ink rounded-full"
-                   style={{ originX: 0.5, originY: 0.5 }}
-                   animate={orbControls}
+            <div className="relative">
+               {/* SVG Progress Ring */}
+               <svg 
+                 className={`absolute -inset-4 w-[calc(100%+32px)] h-[calc(100%+32px)] -rotate-90 pointer-events-none transition-opacity duration-500 ${isIdle ? 'opacity-0' : 'opacity-100'}`}
+                 viewBox="0 0 288 288"
+               >
+                 <circle
+                   cx="144" cy="144" r="136"
+                   fill="transparent"
+                   stroke="var(--color-frame)"
+                   strokeWidth="8"
                  />
-              ) : (
-                 <div className="absolute inset-0 border-[16px] border-frame rounded-full opacity-20" />
-              )}
+                 <motion.circle
+                   cx="144" cy="144" r="136"
+                   fill="transparent"
+                   stroke="var(--color-ink)"
+                   strokeWidth="8"
+                   strokeDasharray={ringCircumference}
+                   animate={{ strokeDashoffset }}
+                   transition={{ duration: 1, ease: "linear" }}
+                 />
+               </svg>
 
-              {/* Text content inside orb */}
-              <div className={`z-10 flex flex-col items-center ${(!isIdle && activePhaseName === "INHALE" && !prefersReducedMotion) ? "text-paper" : "text-ink"} transition-colors duration-500`}>
-                <span className="font-display text-4xl">{getPhaseLabel()}</span>
-                {!isIdle && (
-                  <span className="font-mono text-3xl mt-2 font-bold">{timeLeft}s</span>
-                )}
-              </div>
-            </button>
+               <button
+                 onClick={isIdle ? startSession : togglePause}
+                 className={`w-72 h-72 rounded-full border-4 border-ink bg-paper shadow-hard flex items-center justify-center relative overflow-hidden focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-8 ${isIdle || !isDone ? "cursor-pointer hover:shadow-hard-hover active:translate-y-1 active:translate-x-1 active:shadow-none transition-all" : "cursor-default"}`}
+               >
+                 {/* The animating background orb */}
+                 {!prefersReducedMotion ? (
+                    <motion.div
+                      className="absolute inset-0 bg-ink rounded-full"
+                      style={{ originX: 0.5, originY: 0.5 }}
+                      animate={orbControls}
+                    />
+                 ) : (
+                    <div className="absolute inset-0 border-[16px] border-frame rounded-full opacity-20" />
+                 )}
+
+                 {/* Text content inside orb */}
+                 <div className={`z-10 flex flex-col items-center ${(!isIdle && activePhaseName === "INHALE" && !prefersReducedMotion) ? "text-paper" : "text-ink"} transition-colors duration-500`}>
+                   <span className="font-display text-4xl">{getPhaseLabel()}</span>
+                   {!isIdle && (
+                     <span className="font-mono text-3xl mt-2 font-bold">{timeLeft}s</span>
+                   )}
+                   
+                   {!isIdle && isPaused && (
+                     <div className="absolute top-10 text-ink bg-paper px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest border-2 border-ink shadow-hard-sm">
+                       Tap to Resume
+                     </div>
+                   )}
+                 </div>
+               </button>
+            </div>
 
             {!isIdle && (
-              <button
-                onClick={cancelSession}
-                className="mt-12 text-sm font-bold text-grey-text hover:text-ink underline underline-offset-4"
-              >
-                Cancel session
-              </button>
+              <div className="mt-12 flex gap-8">
+                 <button
+                   onClick={togglePause}
+                   className="flex items-center gap-2 text-sm font-bold text-ink bg-paper px-4 py-2 brutal-border shadow-hard-sm hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-2"
+                 >
+                   {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
+                   {isPaused ? "Resume" : "Pause"}
+                 </button>
+                 <button
+                   onClick={cancelSession}
+                   className="flex items-center gap-2 text-sm font-bold text-grey-text hover:text-ink underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-2"
+                 >
+                   Cancel session
+                 </button>
+              </div>
             )}
           </>
         )}
